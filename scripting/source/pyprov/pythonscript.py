@@ -141,7 +141,7 @@ from com.sun.star.script.browse import XBrowseNode
 from com.sun.star.script.browse.BrowseNodeTypes import SCRIPT, CONTAINER, ROOT
 from com.sun.star.util import XModifyListener
 
-LANGUAGENAME = "Python"
+LANGUAGENAME = "Python3"
 GLOBAL_SCRIPTCONTEXT_NAME = "XSCRIPTCONTEXT"
 CALLABLE_CONTAINER_NAME =  "g_exportedScripts"
 
