@@ -207,7 +207,7 @@ class ByteSequence:
         elif isinstance(value, ByteSequence):
             self.value = value.value
         else:
-            raise TypeError("expected string or bytesequence")
+            raise TypeError("expected byte, bytearray or ByteSequence")
 
     def __repr__(self):
         return "<ByteSequence instance '%s'>" % (self.value, )
@@ -236,7 +236,7 @@ class ByteSequence:
             return ByteSequence( self.value + b )
         elif isinstance( b, ByteSequence ):
             return ByteSequence( self.value + b.value )
-        raise TypeError( "expected string or ByteSequence as operand" )
+        raise TypeError( "expected byte, bytearray or ByteSequence as operand" )
 
     def __hash__( self ):
         return self.value.hash()
