@@ -26,6 +26,7 @@
 #include <osl/process.h>
 #include <osl/file.h>
 #include <osl/thread.h>
+#include <osl/module.hxx>
 
 #include <rtl/ustrbuf.hxx>
 #include <rtl/strbuf.hxx>
@@ -168,8 +169,12 @@ Reference< XInterface > CreateInstance( const Reference< XComponentContext > & c
     {
         OUString pythonPath;
         OUString pythonHome;
-        OUString path( RTL_CONSTASCII_USTRINGPARAM( "$OOO_BASE_DIR/program/" SAL_CONFIGFILE("pythonloader.uno" )));
-        rtl::Bootstrap::expandMacros(path); //TODO: detect failure
+        //OUString path( RTL_CONSTASCII_USTRINGPARAM( "$OOO_BASE_DIR/program/" SAL_CONFIGFILE("pythonloader.uno" )));
+        OUString path;
+        ::osl::Module::getUrlFromAddress(
+            reinterpret_cast< oslGenericFunction >( prependPythonPath ), path );
+        path = path.copy(0, path.lastIndexOf('/') + 1).concat( OUString( RTL_CONSTASCII_USTRINGPARAM( SAL_CONFIGFILE( "pythonloader.uno" ) ) ) );
+        //rtl::Bootstrap::expandMacros(path); //TODO: detect failure
         rtl::Bootstrap bootstrap(path);
 
         // look for pythonhome
