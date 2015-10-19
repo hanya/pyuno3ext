@@ -99,12 +99,12 @@ static PyRef getObjectFromLoaderModule( const char * func )
 
 OUString getImplementationName()
 {
-    return OUString( RTL_CONSTASCII_USTRINGPARAM( "org.openoffice.comp.pyuno.Loader" ) );
+    return OUString( RTL_CONSTASCII_USTRINGPARAM( "org.openoffice.comp.pyuno3.Loader" ) );
 }
 
 Sequence< OUString > getSupportedServiceNames()
 {
-    OUString serviceName( RTL_CONSTASCII_USTRINGPARAM( "com.sun.star.loader.Python" ) );
+    OUString serviceName( RTL_CONSTASCII_USTRINGPARAM( "com.sun.star.loader.Python3" ) );
     return Sequence< OUString > ( &serviceName, 1 );
 }
 
