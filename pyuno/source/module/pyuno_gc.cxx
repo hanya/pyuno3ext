@@ -20,7 +20,7 @@
  *************************************************************/
 
 
-#include <pyuno_impl.hxx>
+#include "pyuno_impl.hxx"
 #include <osl/thread.hxx>
 namespace pyuno
 {
