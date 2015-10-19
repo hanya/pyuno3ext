@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<description xmlns="http://openoffice.org/extensions/description/2006"
+xmlns:xlink="http://www.w3.org/1999/xlink"
+xmlns:d="http://openoffice.org/extensions/description/2006">
+<identifier value="mytools.loader.Python3" />
+<version value="0.1.0" />
+<dependencies>
+<OpenOffice.org-minimal-version value="4.0" d:name="OpenOffice.org 4.0" />
+</dependencies>
+<registration>
+<simple-license accept-by="admin" default-license-id="this" suppress-on-update="true" suppress-if-required="true">
+<license-text xlink:href="LICENSE" lang="en" license-id="this" />
+</simple-license>
+</registration>
+<display-name>
+<name lang="en-US">Python 3.X Component Loader</name>
+</display-name>
+<!--
+<extension-description>
+<src lang="en-US" xlink:href="descriptions/desc_en-US.txt"/>
+</extension-description>
+-->
+<!--
+<update-information>
+<src xlink:href="https://raw.github.com/hanya/pyuno3ext/master/files/pyuno3ext_loader.update.xml"/>
+</update-information>
+-->
+</description>
