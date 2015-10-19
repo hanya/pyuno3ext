@@ -136,8 +136,9 @@ static PyRef createClass( const OUString & name, const Runtime &runtime )
         else
         {
             if( isExc )
-                // we are currently creating the root UNO exception
-                base = PyRef(PyExc_Exception);
+                base = getUNOException( runtime );
+            else
+                base = getUNOStruct( runtime );
         }
     }
     PyRef args( PyTuple_New( 3 ), SAL_NO_ACQUIRE );
@@ -174,40 +175,12 @@ static PyRef createClass( const OUString & name, const Runtime &runtime )
     }
     else
     {
-        PyRef ctor = getObjectFromUnoModule( runtime,"_uno_struct__init__" );
-        PyRef setter = getObjectFromUnoModule( runtime,"_uno_struct__setattr__" );
-        PyRef getter = getObjectFromUnoModule( runtime,"_uno_struct__getattr__" );
-        PyRef repr = getObjectFromUnoModule( runtime,"_uno_struct__repr__" );
-        PyRef eq = getObjectFromUnoModule( runtime,"_uno_struct__eq__" );
-        PyRef ne = getObjectFromUnoModule( runtime, "_uno_struct__ne__" );
-#if PY_MAJOR_VERSION >= 3
-        PyRef dir = getObjectFromUnoModule( runtime, "_uno_struct__dir__" );
-#endif
-        
         PyObject_SetAttrString(
             ret.get(), const_cast< char * >("__pyunostruct__"),
             USTR_TO_PYSTR(name).get() );
         PyObject_SetAttrString(
             ret.get(), const_cast< char * >("typeName"),
             USTR_TO_PYSTR(name).get() );
-        PyObject_SetAttrString(
-            ret.get(), const_cast< char * >("__init__"), ctor.get() );
-        PyObject_SetAttrString(
-            ret.get(), const_cast< char * >("__getattr__"), getter.get() );
-        PyObject_SetAttrString(
-            ret.get(), const_cast< char * >("__setattr__"), setter.get() );
-        PyObject_SetAttrString(
-            ret.get(), const_cast< char * >("__repr__"), repr.get() );
-        PyObject_SetAttrString(
-            ret.get(), const_cast< char * >("__str__"), repr.get() );
-        PyObject_SetAttrString(
-            ret.get(), const_cast< char * >("__eq__"), eq.get() );
-        PyObject_SetAttrString(
-            ret.get(), const_cast< char * >("__ne__"), ne.get() );
-#if PY_MAJOR_VERSION >= 3
-        PyObject_SetAttrString(
-            ret.get(), const_cast< char * >("__dir__"), dir.get() );
-#endif
     }
     return ret;
 }
