@@ -130,8 +130,8 @@ class PyMailSMTPService(unohelper.Base, XSmtpService):
             self.server.starttls()
             self.server.ehlo()
 
-        user = xAuthenticator.getUserName().encode('ascii')
-        password = xAuthenticator.getPassword().encode('ascii')
+        user = xAuthenticator.getUserName()
+        password = xAuthenticator.getPassword()
         if user != '':
             if dbg:
                 out.write('Logging in, username of %s\n' % user)
