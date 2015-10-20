@@ -286,6 +286,9 @@ def _uno_struct__eq__(self,cmp):
         return self.__dict__["value"] == cmp.__dict__["value"]
     return False
 
+def _uno_struct__ne__(self, other):
+    return not self.__eq__(other)
+
 def _uno_struct__dir__(self):
     return dir(self.__dict__["value"]) + list(self.__dict__.keys()) + \
                 list(self.__class__.__dict__.keys())
