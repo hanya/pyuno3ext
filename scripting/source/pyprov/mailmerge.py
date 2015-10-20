@@ -199,7 +199,7 @@ class PyMailSMTPService(unohelper.Base, XSmtpService):
                         mimeEncoding = mimeEncoding + "; charset=UTF-8"
                     textmsg['Content-Type'] = mimeEncoding
                     textmsg['MIME-Version'] = '1.0'
-                    textmsg.set_payload(textbody)
+                    textmsg.set_payload(textbody, "utf-8")
 
                 break
 
