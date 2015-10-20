@@ -496,7 +496,7 @@ static PyObject *getClass( PyObject *, PyObject *args )
     return NULL;
 }
 
-#if PY_VERSION_HEX > 0x3010000
+#if PY_MAJOR_VERSION >= 3
 static PyObject *hasModule( PyObject *, PyObject *args )
 {
     PyObject *ret = 0;
@@ -507,15 +507,22 @@ static PyObject *hasModule( PyObject *, PyObject *args )
         {
             OUString typeName ( OUString::createFromAscii( name ) );
             Runtime runtime;
-            Any a = runtime.getImpl()->cargo->xTdMgr->getByHierarchicalName(typeName);
-            Reference< com::sun::star::reflection::XTypeDescription > xTypeDescription(a, UNO_QUERY);
-            if ( xTypeDescription.is() )
+            if ( runtime.getImpl()->cargo->xTdMgr->hasByHierarchicalName(typeName) )
             {
-                com::sun::star::uno::TypeClass typeClass = xTypeDescription->getTypeClass();
-                ret = PyLong_FromLong( 
-                    typeClass == com::sun::star::uno::TypeClass_MODULE || 
-                    typeClass == com::sun::star::uno::TypeClass_CONSTANTS || 
-                    typeClass == com::sun::star::uno::TypeClass_ENUM );
+                Any a = runtime.getImpl()->cargo->xTdMgr->getByHierarchicalName(typeName);
+                Reference< com::sun::star::reflection::XTypeDescription > xTypeDescription(a, UNO_QUERY);
+                if ( xTypeDescription.is() )
+                {
+                    com::sun::star::uno::TypeClass typeClass = xTypeDescription->getTypeClass();
+                    ret = PyLong_FromLong( 
+                        typeClass == com::sun::star::uno::TypeClass_MODULE || 
+                        typeClass == com::sun::star::uno::TypeClass_CONSTANTS || 
+                        typeClass == com::sun::star::uno::TypeClass_ENUM );
+                }
+            }
+            else
+            {
+                ret = PyLong_FromLong( 0 );
             }
         }
     }
@@ -912,8 +919,9 @@ struct PyMethodDef PyUNOModule_methods [] =
     {const_cast< char * >("invoke"), invoke, METH_VARARGS, NULL},
     {const_cast< char * >("setCurrentContext"), setCurrentContext, METH_VARARGS, NULL},
     {const_cast< char * >("getCurrentContext"), getCurrentContext, METH_NOARGS, NULL},
-#if PY_VERSION_HEX > 0x3010000
+#if PY_MAJOR_VERSION >= 3
     {const_cast< char * >("getModuleElementNames"), getModuleElementNames, METH_VARARGS, NULL},
+    {const_cast< char * >("hasModule"), hasModule, METH_VARARGS, NULL},
 #endif
     {NULL, NULL, 0, NULL}
 };
