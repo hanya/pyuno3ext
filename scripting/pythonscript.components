@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <components xmlns="http://openoffice.org/2010/uno-components">
-  <component loader="com.sun.star.loader.Python3" uri="pythonscript.py">
-    <implementation name="org.openoffice.pyuno.LanguageScriptProviderForPython3">
+  <component loader="com.sun.star.loader.Python" uri="pythonscript.py">
+    <implementation name="org.openoffice.pyuno.LanguageScriptProviderForPython">
       <service name="com.sun.star.script.provider.LanguageScriptProvider"/>
-      <service name="com.sun.star.script.provider.ScriptProviderForPython3"/>
+      <service name="com.sun.star.script.provider.ScriptProviderForPython"/>
+    </implementation>
+  </component>
+  <component loader="com.sun.star.loader.Python" uri="mailmerge.py">
+    <implementation name="org.openoffice.pyuno.MailMessage">
+      <service name="com.sun.star.mail.MailMessage"/>
+    </implementation>
+    <implementation name="org.openoffice.pyuno.MailServiceProvider">
+      <service name="com.sun.star.mail.MailServiceProvider"/>
     </implementation>
   </component>
 </components>

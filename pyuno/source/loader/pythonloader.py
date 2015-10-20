@@ -29,8 +29,8 @@ from com.sun.star.lang import XServiceInfo
 MODULE_PROTOCOL = "vnd.openoffice.pymodule:"
 DEBUG = 0
 
-g_supportedServices  = "com.sun.star.loader.Python3",      # referenced by the native C++ loader !
-g_implementationName = "org.openoffice.comp.pyuno3.Loader" # referenced by the native C++ loader !
+g_supportedServices  = "com.sun.star.loader.Python",      # referenced by the native C++ loader !
+g_implementationName = "org.openoffice.comp.pyuno.Loader" # referenced by the native C++ loader !
 
 def splitUrl( url ):
     nColon = url.find( ":" )
