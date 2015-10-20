@@ -112,7 +112,12 @@ class PyMailSMTPService(unohelper.Base, XSmtpService):
         if dbg:
             out.write("Timeout: %s\n" % str(tout))
 
-        self.server = smtplib.SMTP(server, port,timeout=tout)
+        if connectiontype.upper() == "SSL":
+            if not hasattr(smtplib, "SMTP_SSL"):
+                raise IllegalArgumentException("Connection type is not supported: " + connectiontype, self, 1)
+            self.server = smtplib.SMTP_SSL(server, port, timeout=tout)
+        else:
+            self.server = smtplib.SMTP(server, port,timeout=tout)
         if dbg:
             self.server.set_debuglevel(1)
 
@@ -120,7 +125,7 @@ class PyMailSMTPService(unohelper.Base, XSmtpService):
         if dbg:
             out.write("ConnectionType: %s\n" % str(connectiontype))
 
-        if connectiontype.upper() == 'SSL':
+        if connectiontype.upper() == 'INSECURE':
             self.server.ehlo()
             self.server.starttls()
             self.server.ehlo()
