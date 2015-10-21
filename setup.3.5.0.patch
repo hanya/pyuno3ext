@@ -1,0 +1,112 @@
+--- Python-3.5.0/setup.py	2015-09-13 20:41:26.000000000 +0900
++++ Python-3.5.0/setup.py	2015-10-21 23:11:55.556445175 +0900
+@@ -100,60 +100,60 @@
+         sysroot = macosx_sdk_root()
+ 
+     # Check the standard locations
+-    for dir in std_dirs:
++    for dir in paths:
+         f = os.path.join(dir, filename)
+ 
+         if host_platform == 'darwin' and is_macosx_sdk_path(dir):
+             f = os.path.join(sysroot, dir[1:], filename)
+ 
+-        if os.path.exists(f): return []
++        if os.path.exists(f): return [dir]
+ 
+     # Check the additional directories
+-    for dir in paths:
++    for dir in std_dirs:
+         f = os.path.join(dir, filename)
+ 
+         if host_platform == 'darwin' and is_macosx_sdk_path(dir):
+             f = os.path.join(sysroot, dir[1:], filename)
+ 
+         if os.path.exists(f):
+-            return [dir]
++            return []
+ 
+     # Not found anywhere
+     return None
+ 
+ def find_library_file(compiler, libname, std_dirs, paths):
+-    result = compiler.find_library_file(std_dirs + paths, libname)
++    result = compiler.find_library_file(paths + std_dirs, libname)
+     if result is None:
+         return None
+ 
+     if host_platform == 'darwin':
+         sysroot = macosx_sdk_root()
+-
+-    # Check whether the found file is in one of the standard directories
++    
++    # Otherwise, it must have been in one of the additional directories,
++    # so we have to figure out which one.
+     dirname = os.path.dirname(result)
+-    for p in std_dirs:
++    for p in paths:
+         # Ensure path doesn't end with path separator
+         p = p.rstrip(os.sep)
+ 
+         if host_platform == 'darwin' and is_macosx_sdk_path(p):
+             if os.path.join(sysroot, p[1:]) == dirname:
+-                return [ ]
++                return [ p ]
+ 
+         if p == dirname:
+-            return [ ]
++            return [ p ]
+ 
+-    # Otherwise, it must have been in one of the additional directories,
+-    # so we have to figure out which one.
+-    for p in paths:
++    # Check whether the found file is in one of the standard directories
++    for p in std_dirs:
+         # Ensure path doesn't end with path separator
+         p = p.rstrip(os.sep)
+ 
+         if host_platform == 'darwin' and is_macosx_sdk_path(p):
+             if os.path.join(sysroot, p[1:]) == dirname:
+-                return [ p ]
++                return [ ]
+ 
+         if p == dirname:
+-            return [p]
++            return []
+     else:
+         assert False, "Internal error: Path not found in std_dirs or paths"
+ 
+@@ -779,6 +779,7 @@
+                                depends = ['socketmodule.h']) )
+         # Detect SSL support for the socket module (via _ssl)
+         search_for_ssl_incs_in = [
++                              "../openssl-0.9.8zg/include", 
+                               '/usr/local/ssl/include',
+                               '/usr/contrib/ssl/include/'
+                              ]
+@@ -791,7 +792,8 @@
+             if krb5_h:
+                 ssl_incs += krb5_h
+         ssl_libs = find_library_file(self.compiler, 'ssl',lib_dirs,
+-                                     ['/usr/local/ssl/lib',
++                                     ["../openssl-0.9.8zg", 
++                                     '/usr/local/ssl/lib',
+                                       '/usr/contrib/ssl/lib/'
+                                      ] )
+ 
+@@ -800,6 +802,7 @@
+             exts.append( Extension('_ssl', ['_ssl.c'],
+                                    include_dirs = ssl_incs,
+                                    library_dirs = ssl_libs,
++                                   extra_link_args = ['-Wl,--exclude-libs,ALL'],
+                                    libraries = ['ssl', 'crypto'],
+                                    depends = ['socketmodule.h']), )
+         else:
+@@ -841,6 +844,7 @@
+                                        depends = ['hashlib.h'],
+                                        include_dirs = ssl_incs,
+                                        library_dirs = ssl_libs,
++                                       extra_link_args = ['-Wl,--exclude-libs,ALL'],
+                                        libraries = ['ssl', 'crypto']) )
+             else:
+                 print("warning: openssl 0x%08x is too old for _hashlib" %
