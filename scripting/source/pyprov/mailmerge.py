@@ -245,7 +245,7 @@ class PyMailSMTPService(unohelper.Base, XSmtpService):
             maintype, subtype = ctype.split('/', 1)
             msgattachment = MIMEBase(maintype, subtype)
             data = content.getTransferData(flavor)
-            msgattachment.set_payload(data)
+            msgattachment.set_payload(data.value, "utf-8")
             Encoders.encode_base64(msgattachment)
             fname = attachment.ReadableName
             try:
