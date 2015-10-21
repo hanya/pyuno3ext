@@ -21,7 +21,7 @@ How to Build
 To build extensions, Apache OpenOffice 4.X and its SDK. Setup the SDK 
 before starting to build the extension, see sdk/index.html to begin.
 
-    git clone https://github.com/hanya/pyuno3ext
+    git clone https://github.com/hanya/pyuno3ext.git
     cd pyuno3ext
     source ~/openoffice4.1_sdk/PC_NAME/setsdkenv_unix.sh
     make
