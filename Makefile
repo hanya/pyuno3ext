@@ -29,7 +29,7 @@ include $(SETTINGS)/std.mk
 include $(SETTINGS)/dk.mk
 include $(SETTINGS)/platform.mk
 
-#include $(SETTINGS)/stdtarget.mk
+include $(SETTINGS)/stdtarget.mk
 
 
 LOADER_EXT_PKG_NAME=$(LOADER_EXT_NAME)-$(LOADER_EXT_VERSION)$(LOADER_EXT_STATE)-$(subst _,-,$(EXTENSION_PLATFORM)).$(UNOOXT_EXT)
