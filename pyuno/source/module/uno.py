@@ -28,7 +28,7 @@ import traceback
 
 # all functions and variables starting with a underscore (_) must be considered private
 # and can be changed at any time. Don't use them
-_g_ctx = pyuno.getComponentContext( )
+_g_ctx = pyuno.getComponentContext()
 
 
 def getComponentContext():
@@ -36,17 +36,17 @@ def getComponentContext():
     """
     return _g_ctx
 
-def getConstantByName( constant ):
+def getConstantByName(constant):
     "Looks up the value of a idl constant by giving its explicit name"
-    return pyuno.getConstantByName( constant )
+    return pyuno.getConstantByName(constant)
 
-def getTypeByName( typeName):
+def getTypeByName(typeName):
     """ returns a uno.Type instance of the type given by typeName. In case the
         type does not exist, a com.sun.star.uno.RuntimeException is raised.
     """
-    return pyuno.getTypeByName( typeName )
+    return pyuno.getTypeByName(typeName)
 
-def createUnoStruct( typeName, *args ):
+def createUnoStruct(typeName, *args):
     """creates a uno struct or exception given by typeName. The parameter args may
     1) be empty. In this case, you get a default constructed uno structure.
        ( e.g. createUnoStruct( "com.sun.star.uno.Exception" ) )
@@ -59,32 +59,32 @@ def createUnoStruct( typeName, *args ):
        elements with in the sequence must match the type of each struct element,
        otherwise an exception is thrown.
     """
-    return getClass(typeName)( *args )
+    return getClass(typeName)(*args)
 
-def getClass( typeName ):
+def getClass(typeName):
     """returns the class of a concrete uno exception, struct or interface
     """
     return pyuno.getClass(typeName)
 
-def isInterface( obj ):
+def isInterface(obj):
     """returns true, when obj is a class of a uno interface"""
-    return pyuno.isInterface( obj )
+    return pyuno.isInterface(obj)
 
 def generateUuid():
     "returns a 16 byte sequence containing a newly generated uuid or guid, see rtl/uuid.h "
     return pyuno.generateUuid()
 
-def systemPathToFileUrl( systemPath ):
+def systemPathToFileUrl(systemPath):
     "returns a file-url for the given system path"
-    return pyuno.systemPathToFileUrl( systemPath )
+    return pyuno.systemPathToFileUrl(systemPath)
 
-def fileUrlToSystemPath( url ):
+def fileUrlToSystemPath(url):
     "returns a system path (determined by the system, the python interpreter is running on)"
-    return pyuno.fileUrlToSystemPath( url )
+    return pyuno.fileUrlToSystemPath(url)
 
-def absolutize( path, relativeUrl ):
+def absolutize(path, relativeUrl):
     "returns an absolute file url from the given urls"
-    return pyuno.absolutize( path, relativeUrl )
+    return pyuno.absolutize(path, relativeUrl)
 
 def getCurrentContext():
     """Returns the currently valid current context.
@@ -93,14 +93,14 @@ def getCurrentContext():
     """
     return pyuno.getCurrentContext()
 
-def setCurrentContext( newContext ):
+def setCurrentContext(newContext):
     """Sets newContext as new uno current context. The newContext must
     implement the XCurrentContext interface. The implemenation should
     handle the desired properties and delegate unknown properties to the
     old context. Ensure to reset the old one when you leave your stack ...
     see http://udk.openoffice.org/common/man/concept/uno_contexts.html#current_context
     """
-    return pyuno.setCurrentContext( newContext )
+    return pyuno.setCurrentContext(newContext)
 
 
 def hasModule(name):
@@ -125,10 +125,10 @@ class Enum:
     "Represents a UNO idl enum, use an instance of this class to explicitly pass a boolean to UNO"
     #typeName the name of the enum as a string
     #value    the actual value of this enum as a string
-    def __init__(self,typeName, value):
+    def __init__(self, typeName, value):
         self.typeName = typeName
         self.value = value
-        pyuno.checkEnum( self )
+        pyuno.checkEnum(self)
 
     def __repr__(self):
         return "<uno.Enum %s (%r)>" % (self.typeName, self.value)
@@ -149,6 +149,7 @@ class Type:
         self.typeName = typeName
         self.typeClass = typeClass
         pyuno.checkType(self)
+    
     def __repr__(self):
         return "<Type instance %s (%r)>" % (self.typeName, self.typeClass)
 
@@ -180,13 +181,13 @@ class Bool(object):
 class Char:
     "Represents a UNO char, use an instance of this class to explicitly pass a char to UNO"
     # @param value pass a Unicode string with length 1
-    def __init__(self,value):
+    def __init__(self, value):
         assert isinstance(value, unicode)
         assert len(value) == 1
         self.value=value
 
     def __repr__(self):
-        return "<Char instance %s>" % (self.value, )
+        return "<Char instance %s>" % (self.value,)
 
     def __eq__(self, that):
         if isinstance(that, (str, unicode)):
@@ -210,10 +211,10 @@ class ByteSequence:
             raise TypeError("expected byte, bytearray or ByteSequence")
 
     def __repr__(self):
-        return "<ByteSequence instance '%s'>" % (self.value, )
+        return "<ByteSequence instance '%s'>" % (self.value,)
 
     def __eq__(self, that):
-        if isinstance( that, ByteSequence):
+        if isinstance(that, ByteSequence):
             return self.value == that.value
         elif isinstance(that, (bytes, bytearray)):
             return self.value == that
@@ -228,50 +229,50 @@ class ByteSequence:
     def __getitem__(self, index):
         return self.value[index]
 
-    def __iter__( self ):
+    def __iter__(self):
         return self.value.__iter__()
 
-    def __add__( self , b ):
-        if isinstance( b, (bytes, bytearray) ):
-            return ByteSequence( self.value + b )
-        elif isinstance( b, ByteSequence ):
-            return ByteSequence( self.value + b.value )
-        raise TypeError( "expected byte, bytearray or ByteSequence as operand" )
+    def __add__(self, b):
+        if isinstance(b, (bytes, bytearray)):
+            return ByteSequence(self.value + b)
+        elif isinstance(b, ByteSequence):
+            return ByteSequence(self.value + b.value)
+        raise TypeError("expected byte, bytearray or ByteSequence as operand")
 
-    def __hash__( self ):
+    def __hash__(self):
         return self.value.hash()
 
 
 class Any:
     "use only in connection with uno.invoke() to pass an explicit typed any"
-    def __init__(self, type, value ):
-        if isinstance( type, Type ):
+    def __init__(self, type, value):
+        if isinstance(type, Type):
             self.type = type
         else:
-            self.type = getTypeByName( type )
+            self.type = getTypeByName(type)
         self.value = value
 
-def invoke( object, methodname, argTuple ):
+def invoke(object, methodname, argTuple):
     "use this function to pass exactly typed anys to the callee (using uno.Any)"
-    return pyuno.invoke( object, methodname, argTuple )
+    return pyuno.invoke(object, methodname, argTuple)
 
 #---------------------------------------------------------------------------------------
 # don't use any functions beyond this point, private section, likely to change
 #---------------------------------------------------------------------------------------
 # private, referenced from the pyuno shared library
-def _uno_struct__init__(self,*args):
+def _uno_struct__init__(self, *args):
     if len(args) == 1 and hasattr(args[0], "__class__") and args[0].__class__ == self.__class__ :
         self.__dict__["value"] = args[0]
     else:
-        self.__dict__["value"] = pyuno._createUnoStructHelper(self.__class__.__pyunostruct__,args)
+        self.__dict__["value"] = pyuno._createUnoStructHelper(self.__class__.__pyunostruct__, args)
 
 # private, referenced from the pyuno shared library
-def _uno_struct__getattr__(self,name):
-    return getattr(self.__dict__["value"],name)
+def _uno_struct__getattr__(self, name):
+    return getattr(self.__dict__["value"], name)
 
 # private, referenced from the pyuno shared library
-def _uno_struct__setattr__(self,name,value):
-    return setattr(self.__dict__["value"],name,value)
+def _uno_struct__setattr__(self, name, value):
+    return setattr(self.__dict__["value"], name, value)
 
 # private, referenced from the pyuno shared library
 def _uno_struct__repr__(self):
@@ -281,8 +282,8 @@ def _uno_struct__str__(self):
     return str(self.__dict__["value"])
 
 # private, referenced from the pyuno shared library
-def _uno_struct__eq__(self,cmp):
-    if hasattr(cmp,"value"):
+def _uno_struct__eq__(self, cmp):
+    if hasattr(cmp, "value"):
         return self.__dict__["value"] == cmp.__dict__["value"]
     return False
 
@@ -295,10 +296,10 @@ def _uno_struct__dir__(self):
 
 
 # referenced from pyuno shared lib and pythonscript.py
-def _uno_extract_printable_stacktrace( trace ):
+def _uno_extract_printable_stacktrace(trace):
     ret = ""
     try:
-        lst = traceback.extract_tb( trace )
+        lst = traceback.extract_tb(trace)
         max = len(lst)
         for j in range(max):
             i = lst[max-j-1]
