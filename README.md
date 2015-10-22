@@ -12,12 +12,13 @@ Supported Environments
 
 Restrictions
 ---------
-* You need write permission to program/services.rdb to disable original Python.
+* You need write permission to program/unorc or uno.ini file to disable original Python.
 * This extension can not coexist with the default Python.
 
 
 How to Build
 --------
+Please read How to Use section before building the extension.
 To build extensions, Apache OpenOffice 4.X and its SDK. Setup the SDK 
 before starting to build the extension, see sdk/index.html to begin.
 
@@ -38,14 +39,32 @@ And then install Python3Script-VERSION.oxt later. Restart your office.
 
 How to Use
 --------
-If you do no have write permission to program/services.rdb file, 
+If you do no have write permission to program/unorc or uno.ini file, 
 you can not use this extension.
 This extension conflict with original Python. So you have to disable 
-the original implementations.
-Copy tools/pyuno3ext.py file to your USER/Scripts/python directory. 
-Execute "Enable_Python3" function through 
-Tools - Macros - Macro Organizer - Python window. Then restart your office. 
-You can disable Python3 with "Disable_Python3" funciton. 
+the original implementations. There are two ways to do.
+
+First way, this might not safe to your extensions. With this ways, 
+the order of loading components would change. It might cause some error.
+Change UNO_SERVICES variable in program/unorc or uno.ini file as follows.
+From 
+    UNO_SERVICES=${ORIGIN}/services.rdb ${URE_MORE_SERVICES}
+to
+    UNO_SERVICES=${URE_MORE_SERVICES} ${ORIGIN}/services.rdb
+With this way, components installed by the extensions hidden by 
+the services from the office if conflict each other.
+
+The second way is safer than the first one. Copy tools/pyuno3ext.py file 
+to your USER/Scripts/python directory. Execute "Create_services_rdb" function 
+through Tools - Macros - Macro Organizer - Python window. Store to somewhere 
+and edit the UNO_SERVICES variable in program/unorc or uno.ini.
+From 
+    UNO_SERVICES=${ORIGIN}/services.rdb ${URE_MORE_SERVICES}
+to
+    UNO_SERVICES=file:///home/user/Documents/services.rdb ${URE_MORE_SERVICES}
+, path to the rdb file should be match with the location you have saved.
+
+Then restart your office. 
 You can check the current state with "Show_Information" function.
 
 

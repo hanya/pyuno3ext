@@ -4,6 +4,7 @@ import unohelper
 import os
 import os.path
 import stat
+import platform
 
 components_xml = """<?xml version="1.0"?>
 <components xmlns="http://openoffice.org/2010/uno-components">
@@ -29,25 +30,18 @@ components_xml = """<?xml version="1.0"?>
 </components>"""
 
 
-class Parser:
-    """ Add or remove original component registrations in services.rdb file.
-        If you do not have right to write to the file, the operation fails.
-    """
-    
-    URI_MAILMERGE = "vnd.openoffice.pymodule:mailmerge"
-    URI_PYTHONLOADER = "vnd.sun.star.expand:$OOO_BASE_DIR/program/pythonloader.uno.so"
-    URI_PYTHONSCRIPT = "vnd.openoffice.pymodule:pythonscript"
-    
+class BaseParser:
     
     def __init__(self, ctx):
         self.ctx = ctx
-        self.path = unohelper.fileUrlToSystemPath(
-            self._create("com.sun.star.util.PathSubstitution").\
-                substituteVariables("$(prog)/services.rdb", True))
-        self.dom = None
     
     def _create(self, name):
         return self.ctx.getServiceManager().createInstanceWithContext(name, self.ctx)
+    
+    def _substitute_path(self, path):
+        return unohelper.fileUrlToSystemPath(
+            self._create("com.sun.star.util.PathSubstitution").\
+                substituteVariables("$(prog)/services.rdb", True))
     
     def _check_file(self):
         if not os.path.exists(self.path):
@@ -59,6 +53,31 @@ class Parser:
                 os.chmod(self.path, st.st_mode | stat.S_IWOTH)
             except:
                 return "Unable to make the file writable: " + self.path
+    
+    def show_message(self, message, title):
+        """ Show message in the message box
+            @param message message to show on the box
+            @param title title shown on the title bar
+        """
+        toolkit = self._create("com.sun.star.awt.Toolkit")
+        msgbox = toolkit.createMessageBox(None, 0, 1, title, message)
+        msgbox.execute()
+
+
+class Parser(BaseParser):
+    """ Add or remove original component registrations in services.rdb file.
+        If you do not have right to write to the file, the operation fails.
+    """
+    
+    URI_MAILMERGE = "vnd.openoffice.pymodule:mailmerge"
+    URI_PYTHONLOADER = "vnd.sun.star.expand:$OOO_BASE_DIR/program/pythonloader.uno.so"
+    URI_PYTHONSCRIPT = "vnd.openoffice.pymodule:pythonscript"
+    
+    def __init__(self, ctx, dest):
+        BaseParser.__init__(self, ctx)
+        self.path = self._substitute_path("$(prog)/services.rdb")
+        self.dom = None
+        self.dest = dest
     
     def _load(self):
         ret = None
@@ -80,7 +99,8 @@ class Parser:
         except Exception as e:
             self.show_message("Error while writting: " + str(e), "Error")
         else:
-            with open(self.path, "w") as f:
+            path = self.dest if self.dest else self.path
+            with open(path, "w") as f:
                 f.write(s)
     
     def _remove_elements(self, components):
@@ -117,7 +137,7 @@ class Parser:
         self._remove_elements(components)
         self._save()
     
-    def disable(self):
+    def create_services_rdb(self):
         """ Disable Python 3
             Adds original implementations to services.rdb file.
         """
@@ -127,24 +147,6 @@ class Parser:
         self._remove_elements(components)
         self._add_elements(components)
         self._save()
-    
-    def show_message(self, message, title):
-        """ Show message in the message box
-            @param message message to show on the box
-            @param title title shown on the title bar
-        """
-        toolkit = self._create("com.sun.star.awt.Toolkit")
-        msgbox = toolkit.createMessageBox(None, 0, 1, title, message)
-        msgbox.execute()
-
-
-def Enable_Python3(*args):
-    """ Enable Python 3 loader and script provider """
-    Parser(XSCRIPTCONTEXT.getComponentContext()).enable()
-
-def Disable_Python3(*args):
-    """ Disable Python 3 loader and script provider """
-    Parser(XSCRIPTCONTEXT.getComponentContext()).disable()
 
 def Show_Information(*args):
     """ Shows information on Writer document. """
@@ -154,11 +156,38 @@ def Show_Information(*args):
     doc = XSCRIPTCONTEXT.getDesktop().loadComponentFromURL(
         "private:factory/swriter", "_blank", 0, ())
     
-    s = str(sys.version) + "\n"
+    s = str(sys.version)
     s += ssl.OPENSSL_VERSION
     s += "\nPath: \n"
     for path in sys.path:
         s += path + "\n"
     
     doc.getText().setString(s)
-    
+
+def Create_services_rdb(*args):
+    ctx = XSCRIPTCONTEXT.getComponentContext()
+    dest = _get_path(ctx, save=True, default_name="services.rdb", 
+            filter_names=(("RDB Files (*rdb)", "*.rdb"),), default_filter=0)
+    if not dest:
+        return
+    parser = Parser(ctx, dest)
+    parser.enable()
+
+def _get_path(ctx, save=False, default_name=None, filter_names=None, default_filter=None):
+    fp = ctx.getServiceManager().createInstanceWithContext(
+        "com.sun.star.ui.dialogs.FilePicker", ctx)
+    fp.initialize((10 if save else 0,))
+    if filter_names:
+        for filter_name, pattern in filter_names:
+            fp.appendFilter(filter_name, pattern)
+    if default_filter:
+        fp.setCurrentFilter(filter_names[default_filter])
+    if default_name:
+        fp.setDefaultName(default_name)
+    if fp.execute():
+        dest_url = fp.getFiles()[0]
+        return unohelper.fileUrlToSystemPath(dest_url)
+    else:
+        return
+
+g_exportedScripts = Create_services_rdb, Show_Information
