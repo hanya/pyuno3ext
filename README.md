@@ -3,6 +3,7 @@ PyUNO Extension for Python 3.X
 ===========
 
 This provides PyUNO built with Python 3.X for Apache OpenOffice 4.X. 
+The code is based on Apache OpenOffice revision 1591060.
 
 
 Supported Environments
@@ -48,9 +49,13 @@ First way, this might not safe to your extensions. With this ways,
 the order of loading components would change. It might cause some error.
 Change UNO_SERVICES variable in program/unorc or uno.ini file as follows.
 From 
+
     UNO_SERVICES=${ORIGIN}/services.rdb ${URE_MORE_SERVICES}
+
 to
+
     UNO_SERVICES=${URE_MORE_SERVICES} ${ORIGIN}/services.rdb
+
 With this way, components installed by the extensions hidden by 
 the services from the office if conflict each other.
 
@@ -59,9 +64,13 @@ to your USER/Scripts/python directory. Execute "Create_services_rdb" function
 through Tools - Macros - Macro Organizer - Python window. Store to somewhere 
 and edit the UNO_SERVICES variable in program/unorc or uno.ini.
 From 
+
     UNO_SERVICES=${ORIGIN}/services.rdb ${URE_MORE_SERVICES}
+
 to
+
     UNO_SERVICES=file:///home/user/Documents/services.rdb ${URE_MORE_SERVICES}
+
 , path to the rdb file should be match with the location you have saved.
 
 Then restart your office. 
@@ -76,11 +85,11 @@ is the same location with the original Python scripts.
 
 Python Components
 --------
-The name of the component loader is "com.sun.star.loader.Python3". 
+The name of the component loader is "com.sun.star.loader.Python". 
 You have to choose the way to register with *.components file to register your components 
 written in Python 3. You can see the example in scripting/pythonscript.components and 
 scripting/manifest.xml files.
-Without components file, you will met error while installing your Python component 
+Without components file, you will meet error while installing your Python component 
 because of the restriction of the extension manager.
 
 
@@ -104,18 +113,23 @@ to get required information about UNO modules in pyuno.
 See uno.py more detail.
   
 New import hook allows to import module defined in IDL as Python module. 
-For example, com.sun.star.beans module can be imported as follows: 
+For example, com.sun.star.beans module can be imported as follows:
+ 
     import com.sun.star.beans
+
 and its sub elements can be accessed as its attribute.
+
     pv = com.sun.star.beans.PropertyValue()
+
 When enum or constants is requested, it can be imported as modules. 
 And its value elements are accessible as module attributes. 
+
     import com.sun.star.awt.PosSize as PosSize
     print(PosSize.POS)
   
 These module attributes are not loaded at import time of the module. 
 But once a value is requested, it would be normal attribute of the module. 
-No more __getattr__ hook is not called to get the value.
+No more \__getattr\__ hook is not called to get the value.
 
 
 CHANGES
