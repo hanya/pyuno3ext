@@ -22,121 +22,122 @@ import uno
 import unohelper
 import sys
 import os
-from com.sun.star.uno import Exception,RuntimeException
+from com.sun.star.uno import Exception, RuntimeException
 from com.sun.star.loader import XImplementationLoader
 from com.sun.star.lang import XServiceInfo
 
 MODULE_PROTOCOL = "vnd.openoffice.pymodule:"
 DEBUG = 0
 
-g_supportedServices  = "com.sun.star.loader.Python",      # referenced by the native C++ loader !
-g_implementationName = "org.openoffice.comp.pyuno.Loader" # referenced by the native C++ loader !
+g_supportedServices  = "com.sun.star.loader.Python", 
+g_implementationName = "org.openoffice.comp.pyuno.Loader"
 
-def splitUrl( url ):
-    nColon = url.find( ":" )
-    if -1 == nColon:
-        raise RuntimeException( "PythonLoader: No protocol in url " + url, None )
-    return url[0:nColon], url[nColon+1:len(url)]
+def splitUrl(url):
+    parts = url.split(":", 1)
+    if len(parts) == 1:
+        raise RuntimeException("PythonLoader: No protocol in url " + url, None)
+    return parts
 
 g_loadedComponents = {}
-def checkForPythonPathBesideComponent( url ):
-    path = unohelper.fileUrlToSystemPath( url+"/pythonpath.zip" );
-    if DEBUG == 1:
-        print("checking for existence of " + encfile( path ))
-    if 1 == os.access( encfile( path ), os.F_OK) and not path in sys.path:
-        if DEBUG == 1:
-            print("adding " + encfile( path ) + " to sys.path")
-        sys.path.append( path )
 
-    path = unohelper.fileUrlToSystemPath( url+"/pythonpath" );
-    if 1 == os.access( encfile( path ), os.F_OK) and not path in sys.path:
+def checkForPythonPathBesideComponent(url):
+    path = unohelper.fileUrlToSystemPath(url + "/pythonpath.zip");
+    if DEBUG == 1:
+        print("checking for existence of " + encfile(path))
+    if 1 == os.access(encfile(path), os.F_OK) and not path in sys.path:
         if DEBUG == 1:
-            print("adding " + encfile( path ) + " to sys.path")
-        sys.path.append( path )
+            print("adding " + encfile(path) + " to sys.path")
+        sys.path.append(path)
+
+    path = unohelper.fileUrlToSystemPath(url + "/pythonpath");
+    if 1 == os.access(encfile(path), os.F_OK) and not path in sys.path:
+        if DEBUG == 1:
+            print("adding " + encfile(path) + " to sys.path")
+        sys.path.append(path)
 
 def encfile(uni):
-    return uni.encode( sys.getfilesystemencoding())
+    return uni.encode(sys.getfilesystemencoding())
 
-class Loader( XImplementationLoader, XServiceInfo, unohelper.Base ):
-    def __init__(self, ctx ):
+class Loader(XImplementationLoader, XServiceInfo, unohelper.Base):
+    def __init__(self, ctx):
         if DEBUG:
             print("pythonloader.Loader ctor")
         self.ctx = ctx
 
-    def getModuleFromUrl( self, url ):
+    def getModuleFromUrl(self, url):
         if DEBUG:
-            print("pythonloader: interpreting url " +url)
-        protocol, dependent = splitUrl( url )
+            print("pythonloader: interpreting url " + url)
+        protocol, dependent = splitUrl(url)
         if "vnd.sun.star.expand" == protocol:
-            exp = self.ctx.getValueByName( "/singletons/com.sun.star.util.theMacroExpander" )
+            exp = self.ctx.getValueByName("/singletons/com.sun.star.util.theMacroExpander")
             url = exp.expandMacros(dependent)
-            protocol,dependent = splitUrl( url )
+            protocol, dependent = splitUrl(url)
 
         if DEBUG:
-            print("pythonloader: after expansion " +protocol +":" + dependent)
+            print("pythonloader: after expansion " + protocol + ":" + dependent)
 
         try:
             if "file" == protocol:
                 # remove \..\ sequence, which may be useful e.g. in the build env
-                url = unohelper.absolutize( url, url )
+                url = unohelper.absolutize(url, url)
 
                 # did we load the module already ?
-                mod = g_loadedComponents.get( url )
+                mod = g_loadedComponents.get(url)
                 if not mod:
                     mod = type(sys)("uno_component")
 
                     # check for pythonpath.zip beside .py files
-                    checkForPythonPathBesideComponent( url[0:url.rfind('/')] )
+                    checkForPythonPathBesideComponent(url[0:url.rfind('/')])
 
                     # read the file
-                    filename = unohelper.fileUrlToSystemPath( url )
-                    fileHandle = open( filename )
-                    src = fileHandle.read().replace("\r","")
-                    if not src.endswith( "\n" ):
-                        src = src + "\n"
+                    filename = unohelper.fileUrlToSystemPath(url)
+                    with open(filename) as f:
+                        src = f.read().replace("\r", "")
+                    if not src.endswith("\n"):
+                        src += "\n"
 
                     # compile and execute the module
-                    codeobject = compile( src, encfile(filename), "exec" )
+                    codeobject = compile(src, encfile(filename), "exec")
                     exec(codeobject, mod.__dict__)
                     mod.__file__ = encfile(filename)
                     g_loadedComponents[url] = mod
                 return mod
             elif "vnd.openoffice.pymodule" == protocol:
-                return  __import__( dependent )
+                return  __import__(dependent)
             else:
-                raise RuntimeException( "PythonLoader: Unknown protocol " +
-                                        protocol + " in url " +url, self )
+                raise RuntimeException("PythonLoader: Unknown protocol " +
+                                        protocol + " in url " + url, self)
         except ImportError as e:
-            raise RuntimeException( "Couldn't load "+url+ " for reason "+str(e), None)
+            raise RuntimeException("Couldn't load " + url + " for reason " + str(e), None)
         return None
 
-    def activate( self, implementationName, dummy, locationUrl, regKey ):
+    def activate(self, implementationName, dummy, locationUrl, regKey):
         if DEBUG:
             print("pythonloader.Loader.activate")
 
-        mod = self.getModuleFromUrl( locationUrl )
-        implHelper = mod.__dict__.get( "g_ImplementationHelper" , None )
-        if implHelper == None:
-            return mod.getComponentFactory( implementationName, self.ctx.ServiceManager, regKey )
+        mod = self.getModuleFromUrl(locationUrl)
+        implHelper = mod.__dict__.get("g_ImplementationHelper" , None)
+        if implHelper is None:
+            return mod.getComponentFactory(implementationName, self.ctx.getServiceManager(), regKey)
         else:
-            return implHelper.getComponentFactory( implementationName,regKey,self.ctx.ServiceManager)
+            return implHelper.getComponentFactory(implementationName, regKey, self.ctx.getServiceManager())
 
-    def writeRegistryInfo( self, regKey, dummy, locationUrl ):
+    def writeRegistryInfo(self, regKey, dummy, locationUrl):
         if DEBUG:
             print("pythonloader.Loader.writeRegistryInfo")
 
-        mod = self.getModuleFromUrl( locationUrl )
-        implHelper = mod.__dict__.get( "g_ImplementationHelper" , None )
-        if implHelper == None:
-            return mod.writeRegistryInfo( self.ctx.ServiceManager, regKey )
+        mod = self.getModuleFromUrl(locationUrl)
+        implHelper = mod.__dict__.get("g_ImplementationHelper" , None)
+        if implHelper is None:
+            return mod.writeRegistryInfo(self.ctx.getServiceManager(), regKey)
         else:
-            return implHelper.writeRegistryInfo( regKey, self.ctx.ServiceManager )
+            return implHelper.writeRegistryInfo(regKey, self.ctx.getServiceManager())
 
-    def getImplementationName( self ):
+    def getImplementationName(self):
         return g_implementationName
 
-    def supportsService( self, ServiceName ):
+    def supportsService(self, ServiceName):
         return ServiceName in self.serviceNames
 
-    def getSupportedServiceNames( self ):
+    def getSupportedServiceNames(self):
         return g_supportedServices

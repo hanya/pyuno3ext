@@ -130,8 +130,8 @@ class PyMailSMTPService(unohelper.Base, XSmtpService):
             self.server.starttls()
             self.server.ehlo()
 
-        user = xAuthenticator.getUserName()
-        password = xAuthenticator.getPassword()
+        user = xAuthenticator.getUserName().encode('ascii')
+        password = xAuthenticator.getPassword().encode('ascii')
         if user != '':
             if dbg:
                 out.write('Logging in, username of %s\n' % user)
@@ -199,7 +199,7 @@ class PyMailSMTPService(unohelper.Base, XSmtpService):
                         mimeEncoding = mimeEncoding + "; charset=UTF-8"
                     textmsg['Content-Type'] = mimeEncoding
                     textmsg['MIME-Version'] = '1.0'
-                    textmsg.set_payload(textbody, "utf-8")
+                    textmsg.set_payload(textbody)
 
                 break
 
@@ -245,7 +245,7 @@ class PyMailSMTPService(unohelper.Base, XSmtpService):
             maintype, subtype = ctype.split('/', 1)
             msgattachment = MIMEBase(maintype, subtype)
             data = content.getTransferData(flavor)
-            msgattachment.set_payload(data.value, "utf-8")
+            msgattachment.set_payload(data)
             Encoders.encode_base64(msgattachment)
             fname = attachment.ReadableName
             try:
