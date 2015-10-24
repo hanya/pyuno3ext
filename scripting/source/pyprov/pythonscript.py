@@ -120,7 +120,6 @@ log = Logger(getLogTarget())
 log.debug("pythonscript loading")
 
 #from com.sun.star.lang import typeOfXServiceInfo, typeOfXTypeProvider
-from com.sun.star.uno import RuntimeException
 from com.sun.star.lang import XServiceInfo
 from com.sun.star.io import IOException
 from com.sun.star.ucb import CommandAbortedException, XCommandEnvironment, XProgressHandler, Command
@@ -128,7 +127,7 @@ from com.sun.star.task import XInteractionHandler
 from com.sun.star.beans import XPropertySet, Property
 from com.sun.star.container import XNameContainer
 from com.sun.star.xml.sax import XDocumentHandler, InputSource
-from com.sun.star.uno import Exception as UnoException
+from com.sun.star.uno import Exception as UnoException, RuntimeException
 from com.sun.star.script import XInvocation
 from com.sun.star.awt import XActionListener
 
@@ -280,36 +279,6 @@ class ScriptContext(unohelper.Base):
     def getInvocationContext(self):
         return self.inv
 
-#----------------------------------
-# Global Module Administration
-# does not fit together with script
-# engine lifetime management
-#----------------------------------
-#g_scriptContext = ScriptContext( uno.getComponentContext(), None )
-#g_modules = {}
-#def getModuleByUrl( url, sfa ):
-#    entry =  g_modules.get(url)
-#    load = True
-#    lastRead = sfa.getDateTimeModified( url )
-#    if entry:
-#        if hasChanged( entry.lastRead, lastRead ):
-#            log.debug("file " + url + " has changed, reloading")
-#        else:
-#            load = False
-#
-#    if load:
-#        log.debug( "opening >" + url + "<" )
-#
-#        code = readTextFromStream( sfa.openFileRead( url ) )
-
-        # execute the module
-#        entry = ModuleEntry( lastRead, imp.new_module("ooo_script_framework") )
-#        entry.module.__dict__[GLOBAL_SCRIPTCONTEXT_NAME] = g_scriptContext
-#        entry.module.__file__ = url
-#        exec code in entry.module.__dict__
-#        g_modules[ url ] = entry
-#        log.debug( "mapped " + url + " to " + str( entry.module ) )
-#    return entry.module
 
 class ProviderContext:
     def __init__(self, storageType, sfa, uriHelper, scriptContext):
@@ -322,20 +291,18 @@ class ProviderContext:
         self.mapPackageName2Path = None
 
     def getTransientPartFromUrl(self, url):
-        rest = url.replace(self.rootUrl, "",1).replace("/", "",1)
+        rest = url.replace(self.rootUrl, "", 1).replace("/", "", 1)
         return rest[0:rest.find("/")]
 
     def getPackageNameFromUrl(self, url):
-        rest = url.replace(self.rootUrl, "",1).replace("/", "",1)
+        rest = url.replace(self.rootUrl, "", 1).replace("/", "", 1)
         start = rest.find("/") +1
-        return rest[start:rest.find("/",start)]
-
+        return rest[start:rest.find("/", start)]
 
     def removePackageByUrl(self, url):
-        items = list(self.mapPackageName2Path.items())
-        for i in items:
-            if url in i[1].pathes:
-                self.mapPackageName2Path.pop(i[0])
+        for name, package in self.mapPackageName2Path.items():
+            if url in package.pathes:
+                self.mapPackageName2Path.pop(name)
                 break
 
     def addPackageByUrl(self, url):
@@ -350,10 +317,8 @@ class ProviderContext:
             self.mapPackageName2Path[packageName] = package
 
     def isUrlInPackage(self, url):
-        values = list(self.mapPackageName2Path.values())
-        for i in values:
-#           print "checking " + url + " in " + str(i.pathes)
-            if url in i.pathes:
+        for package in self.mapPackageName2Path.values():
+            if url in package.pathes:
                 return True
         return False
 
@@ -366,7 +331,7 @@ class ProviderContext:
         ret = url
         if self.rootUrl:
             pos = len(self.rootUrl) +1
-            ret = url[0:pos]+url[url.find("/",pos)+1:len(url)]
+            ret = url[0:pos]+url[url.find("/",pos)+1:]
         log.debug("getPersistentUrlFromStorageUrl " + url +  " -> "+ ret)
         return ret
 
@@ -376,7 +341,7 @@ class ProviderContext:
             pos = len(self.rootUrl)+1
             packageName = url[pos:url.find("/",pos+1)]
             package = self.mapPackageName2Path[packageName]
-            ret = url[0:pos]+ package.transientPathElement + "/" + url[pos:len(url)]
+            ret = url[0:pos]+ package.transientPathElement + "/" + url[pos:]
         log.debug("getStorageUrlFromPersistentUrl " + url + " -> "+ ret)
         return ret
 
@@ -457,31 +422,43 @@ def isScript(candidate):
     return ret
 
 #-------------------------------------------------------
-class ScriptBrowseNode(unohelper.Base, XBrowseNode, XPropertySet, XInvocation, XActionListener):
-    def __init__(self, provCtx, uri, fileName, funcName):
-        self.fileName = fileName
-        self.funcName = funcName
+class BrowseNodeBase(unohelper.Base, XBrowseNode):
+    
+    NODE_TYPE = CONTAINER
+    
+    def __init__(self, provCtx, uri, name):
         self.provCtx = provCtx
         self.uri = uri
-
+        self.name = name
+    
+    # XBrowseNode
     def getName(self):
-        return self.funcName
-
+        return self.name
+    
     def getChildNodes(self):
         return ()
-
+    
     def hasChildNodes(self):
         return False
-
+    
     def getType(self):
-        return SCRIPT
+        return self.NODE_TYPE
 
+
+class ScriptBrowseNode(BrowseNodeBase, XPropertySet, XInvocation, XActionListener):
+    
+    NODE_TYPE = SCRIPT
+    
+    def __init__(self, provCtx, uri, fileName, name):
+        super().__init__(provCtx, uri, name)
+        self.fileName = fileName
+    
     def getPropertyValue(self, name):
         ret = None
         try:
             if name == "URI":
                 ret = self.provCtx.uriHelper.getScriptURI(
-                    self.provCtx.getPersistentUrlFromStorageUrl(self.uri + "$" + self.funcName))
+                    self.provCtx.getPersistentUrlFromStorageUrl(self.uri + "$" + self.name))
             elif name == "Editable" and ENABLE_EDIT_DIALOG:
                 ret = not self.provCtx.sfa.isReadOnly(self.uri)
 
@@ -574,28 +551,18 @@ class ScriptBrowseNode(unohelper.Base, XBrowseNode, XPropertySet, XInvocation, X
 
 
 #-------------------------------------------------------
-class FileBrowseNode(unohelper.Base, XBrowseNode):
-    def __init__(self, provCtx, uri , name):
-        self.provCtx = provCtx
-        self.uri = uri
-        self.name = name
-        self.funcnames = None
-
-    def getName(self):
-        return self.name
-
+class FileBrowseNode(BrowseNodeBase):
+    def __init__(self, provCtx, uri, name):
+        super().__init__(provCtx, uri, name)
+        self.func_names = None
+    
     def getChildNodes(self):
         ret = ()
         try:
-            self.funcnames = self.provCtx.getFuncsByUrl(self.uri)
-
-            scriptNodeList = []
-            for i in self.funcnames:
-                scriptNodeList.append(
-                    ScriptBrowseNode(
-                    self.provCtx, self.uri, self.name, i))
-            ret = tuple(scriptNodeList)
-            log.debug("returning " + str(len(ret)) + " ScriptChildNodes on " + self.uri)
+            self.func_names = self.provCtx.getFuncsByUrl(self.uri)
+            ret = tuple([ScriptBrowseNode(self.provCtx, self.uri, self.name, func_name)
+                                for func_name in self.func_names])
+            log.debug("returning {} ScriptChildNodes on {}".format(len(ret), self.uri))
         except Exception as e:
             text = lastException2String()
             log.error("Error while evaluating " + self.uri + ":" + text)
@@ -605,52 +572,35 @@ class FileBrowseNode(unohelper.Base, XBrowseNode):
     def hasChildNodes(self):
         try:
             return len(self.getChildNodes()) > 0
-        except Exception as e:
+        except:
             return False
 
-    def getType(self):
-        return CONTAINER
 
-
-
-class DirBrowseNode(unohelper.Base, XBrowseNode):
-    def __init__(self, provCtx, name, rootUrl):
-        self.provCtx = provCtx
-        self.name = name
-        self.rootUrl = rootUrl
-
-    def getName(self):
-        return self.name
+class DirBrowseNode(BrowseNodeBase):
+    def __init__(self, provCtx, uri, name):
+        super().__init__(provCtx, uri, name)
 
     def getChildNodes(self):
         try:
-            log.debug( "DirBrowseNode.getChildNodes called for " + self.rootUrl )
-            contents = self.provCtx.sfa.getFolderContents( self.rootUrl, True )
+            log.debug("DirBrowseNode.getChildNodes called for " + self.uri)
+            contents = self.provCtx.sfa.getFolderContents(self.uri, True)
             browseNodeList = []
-            for i in contents:
-                if i.endswith( ".py" ):
-                    log.debug( "adding filenode " + i )
-                    browseNodeList.append(
-                        FileBrowseNode( self.provCtx, i, i[i.rfind("/")+1:len(i)-3] ) )
-                elif self.provCtx.sfa.isFolder( i ) and not i.endswith("/pythonpath"):
-                    log.debug( "adding DirBrowseNode " + i )
-                    browseNodeList.append( DirBrowseNode( self.provCtx, i[i.rfind("/")+1:len(i)],i))
-            return tuple( browseNodeList )
+            for url in contents:
+                if self.provCtx.sfa.isFolder(url) and not url.endswith("/pythonpath"):
+                    log.debug("adding DirBrowseNode " + url)
+                    browseNodeList.append(DirBrowseNode(self.provCtx, url, url[url.rfind("/")+1:]))
+                elif url.endswith(".py"):
+                    log.debug("adding filenode " + url)
+                    browseNodeList.append(FileBrowseNode(self.provCtx, url, url[url.rfind("/")+1:-3]))
+            return tuple(browseNodeList)
         except Exception as e:
             text = lastException2String()
-            log.error( "DirBrowseNode error: " + str(e) + " while evaluating " + self.rootUrl)
-            log.error( text)
+            log.error("DirBrowseNode error: " + str(e) + " while evaluating " + self.uri)
+            log.error(text)
             return ()
 
     def hasChildNodes(self):
         return True
-
-    def getType(self):
-        return CONTAINER
-
-    def getScript(self, uri):
-        log.debug( "DirBrowseNode getScript " + uri + " invoked" )
-        raise IllegalArgumentException( "DirBrowseNode couldn't instantiate script " + uri , self , 0 )
 
 
 class ManifestHandler(XDocumentHandler, unohelper.Base):
@@ -686,7 +636,7 @@ def isPyFileInPath(sfa, path):
     contents = sfa.getFolderContents(path, True)
     for i in contents:
         if sfa.isFolder(i):
-            ret = isPyFileInPath(sfa,i)
+            ret = isPyFileInPath(sfa, i)
         else:
             if i.endswith(".py"):
                 ret = True
@@ -725,11 +675,11 @@ class DummyInteractionHandler(unohelper.Base, XInteractionHandler):
         log.debug("pythonscript: DummyInteractionHandler.handle " + str(event))
 
 class DummyProgressHandler(unohelper.Base, XProgressHandler):
-    def push(self,status):
+    def push(self, status):
         log.debug("pythonscript: DummyProgressHandler.push " + str(status))
-    def update( self,status ):
+    def update(self, status):
         log.debug("pythonscript: DummyProgressHandler.update " + str(status))
-    def pop( self ):
+    def pop(self):
         log.debug("pythonscript: DummyProgressHandler.push " + str(event))
 
 class CommandEnvironment(unohelper.Base, XCommandEnvironment):
@@ -782,68 +732,51 @@ def mapStorageType2PackageContext(storageType):
 
 def getPackageName2PathMap(sfa, storageType):
     ret = {}
-    packageManagerFactory = uno.getComponentContext().getValueByName(
-        "/singletons/com.sun.star.deployment.thePackageManagerFactory")
-    packageManager = packageManagerFactory.getPackageManager(
-        mapStorageType2PackageContext(storageType))
-#    packageManager.addModifyListener( ModifyListener() )
+    extension_manager = uno.getComponentContext().getValueByName(
+        "/singletons/com.sun.star.deployment.ExtensionManager")
     log.debug("pythonscript: getPackageName2PathMap start getDeployedPackages")
-    packages = packageManager.getDeployedPackages(
-        packageManager.createAbortChannel(), CommandEnvironment())
-    log.debug("pythonscript: getPackageName2PathMap end getDeployedPackages (" + str(len(packages))+")")
+    packages = extension_manager.getDeployedExtensions(
+                mapStorageType2PackageContext(storageType), 
+                extension_manager.createAbortChannel(), CommandEnvironment())
+    log.debug("pythonscript: getPackageName2PathMap end getDeployedPackages (" + str(len(packages)) + ")")
 
-    for i in packages:
-        log.debug("inspecting package " + i.Name + "("+i.Identifier.Value+")")
-        transientPathElement = penultimateElement(i.URL)
-        j = expandUri(i.URL)
-        pathes = getPathesFromPackage(j, sfa)
+    for package in packages:
+        log.debug("inspecting package " + package.getName() + "(" + package.getIdentifier().Value + ")")
+        transientPathElement = penultimateElement(package.getURL())
+        uri = expandUri(package.getURL())
+        pathes = getPathesFromPackage(uri, sfa)
         if len(pathes) > 0:
             # map package name to url, we need this later
-            log.isErrorLevel() and log.error( "adding Package " + transientPathElement + " " + str( pathes ) )
-            ret[lastElement(j)] = Package(pathes, transientPathElement)
+            log.isErrorLevel() and log.error("adding Package " + transientPathElement + " " + str(pathes))
+            ret[lastElement(uri)] = Package(pathes, transientPathElement)
     return ret
 
 def penultimateElement(aStr):
     lastSlash = aStr.rindex("/")
-    penultimateSlash = aStr.rindex("/",0,lastSlash-1)
+    penultimateSlash = aStr.rindex("/", 0, lastSlash-1)
     return  aStr[penultimateSlash+1:lastSlash]
 
 def lastElement(aStr):
-    return aStr[aStr.rfind("/")+1:len(aStr)]
+    return aStr[aStr.rfind("/")+1:]
 
-class PackageBrowseNode(unohelper.Base, XBrowseNode):
-    def __init__(self, provCtx, name, rootUrl):
-        self.provCtx = provCtx
-        self.name = name
-        self.rootUrl = rootUrl
-
-    def getName(self):
-        return self.name
-
+class PackageBrowseNode(BrowseNodeBase):
+    def __init__(self, provCtx, uri, name):
+        super().__init__(provCtx, uri, name)
+    
     def getChildNodes(self):
-        items = list(self.provCtx.mapPackageName2Path.items())
         browseNodeList = []
-        for i in items:
-            if len(i[1].pathes) == 1:
+        for name, package in self.provCtx.mapPackageName2Path.items():
+            if len(package.pathes) == 1:
                 browseNodeList.append(
-                    DirBrowseNode(self.provCtx, i[0], i[1].pathes[0]))
+                    DirBrowseNode(self.provCtx, package.pathes[0], name))
             else:
-                for j in i[1].pathes:
+                for path in package.pathes:
                     browseNodeList.append(
-                        DirBrowseNode(self.provCtx, i[0] + "." + lastElement(j), j))
+                        DirBrowseNode(self.provCtx, path, name + "." + lastElement(path)))
         return tuple(browseNodeList)
 
     def hasChildNodes(self):
-        return len(self.mapPackageName2Path) > 0
-
-    def getType(self):
-        return CONTAINER
-
-    def getScript(self, uri):
-        log.debug("DirBrowseNode getScript " + uri + " invoked")
-        raise IllegalArgumentException("PackageBrowseNode couldn't instantiate script " + uri, self, 0)
-
-
+        return len(self.provCtx.mapPackageName2Path) > 0
 
 
 class PythonScript(unohelper.Base, XScript):
@@ -888,8 +821,9 @@ def expandUri(uri):
     return uri
 
 #--------------------------------------------------------------
-class PythonScriptProvider(unohelper.Base, XBrowseNode, XScriptProvider, XNameContainer):
+class PythonScriptProvider(BrowseNodeBase, XScriptProvider, XNameContainer):
     def __init__(self, ctx, *args):
+        super().__init__(None, "", LANGUAGENAME)
         if log.isDebugLevel():
             mystr = ""
             for i in args:
@@ -902,7 +836,7 @@ class PythonScriptProvider(unohelper.Base, XBrowseNode, XScriptProvider, XNameCo
         inv = None
         storageType = ""
 
-        if isinstance(args[0], unicode):
+        if isinstance(args[0], str):
             storageType = args[0]
             if storageType.startswith("vnd.sun.star.tdoc"):
                 doc = getModelFromDocUrl(ctx, storageType)
@@ -918,11 +852,7 @@ class PythonScriptProvider(unohelper.Base, XBrowseNode, XScriptProvider, XNameCo
                 text = lastException2String()
                 log.error(text)
 
-        isPackage = storageType.endswith(":uno_packages")
-
         try:
-#            urlHelper = ctx.ServiceManager.createInstanceWithArgumentsAndContext(
-#                "com.sun.star.script.provider.ScriptURIHelper", (LANGUAGENAME, storageType), ctx)
             urlHelper = MyUriHelper(ctx, storageType)
             log.debug("got urlHelper " + str(urlHelper))
 
@@ -937,34 +867,24 @@ class PythonScriptProvider(unohelper.Base, XBrowseNode, XScriptProvider, XNameCo
                     "PythonScriptProvider couldn't instantiate " + ucbService, self)
             self.provCtx = ProviderContext(
                 storageType, sfa, urlHelper, ScriptContext(ctx, doc, inv))
-            if isPackage:
+                
+            if storageType.endswith(":uno_packages"):
                 mapPackageName2Path = getPackageName2PathMap(sfa, storageType)
-                self.provCtx.setPackageAttributes(mapPackageName2Path , rootUrl)
-                self.dirBrowseNode = PackageBrowseNode(self.provCtx, LANGUAGENAME, rootUrl)
+                self.provCtx.setPackageAttributes(mapPackageName2Path, rootUrl)
+                self.dirBrowseNode = PackageBrowseNode(self.provCtx, rootUrl, LANGUAGENAME)
             else:
-                self.dirBrowseNode = DirBrowseNode(self.provCtx, LANGUAGENAME, rootUrl)
+                self.dirBrowseNode = DirBrowseNode(self.provCtx, rootUrl, LANGUAGENAME)
 
         except Exception as e:
             text = lastException2String()
             log.debug("PythonScriptProvider could not be instantiated because of : " + text)
             raise e
 
-    def getName(self):
-        return self.dirBrowseNode.getName()
-
     def getChildNodes(self):
         return self.dirBrowseNode.getChildNodes()
 
     def hasChildNodes(self):
         return self.dirBrowseNode.hasChildNodes()
-
-    def getType(self):
-        return self.dirBrowseNode.getType()
-
-    def getScript(self, uri):
-        log.debug("DirBrowseNode getScript " + uri + " invoked")
-
-        raise IllegalArgumentException("DirBrowseNode couldn't instantiate script " + uri, self, 0)
 
     def getScript(self, scriptUri):
         try:
@@ -998,11 +918,11 @@ class PythonScriptProvider(unohelper.Base, XBrowseNode, XScriptProvider, XNameCo
 
     def getImplementationName(self):
         return g_implName
-
+    
+    # XNameContainer
     def getByName(self, name):
         log.debug("getByName called" + str(name))
         return None
-
 
     def getElementNames(self):
         log.debug("getElementNames called")
