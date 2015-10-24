@@ -307,7 +307,7 @@ class ProviderContext:
     def addPackageByUrl(self, url):
         packageName = self.getPackageNameFromUrl(url)
         transientPart = self.getTransientPartFromUrl(url)
-        log.debug("addPackageByUrl : " + packageName + ", " + transientPart + "("+url+")" + ", rootUrl=" + self.rootUrl)
+        log.debug("addPackageByUrl : {}, {} ({}), rootUrl={}".format(packageName, transientPart, url, self.rootUrl))
         if packageName in self.mapPackageName2Path:
             package = self.mapPackageName2Path[packageName]
             package.pathes = package.pathes + (url,)
@@ -331,7 +331,7 @@ class ProviderContext:
         if self.rootUrl:
             pos = len(self.rootUrl) +1
             ret = url[0:pos]+url[url.find("/",pos)+1:]
-        log.debug("getPersistentUrlFromStorageUrl " + url +  " -> "+ ret)
+        log.debug("getPersistentUrlFromStorageUrl {} -> {}".format(url, ret))
         return ret
 
     def getStorageUrlFromPersistentUrl(self, url):
@@ -341,7 +341,7 @@ class ProviderContext:
             packageName = url[pos:url.find("/",pos+1)]
             package = self.mapPackageName2Path[packageName]
             ret = url[0:pos]+ package.transientPathElement + "/" + url[pos:]
-        log.debug("getStorageUrlFromPersistentUrl " + url + " -> "+ ret)
+        log.debug("getStorageUrlFromPersistentUrl {} -> {}".format(url, ret))
         return ret
 
     def getFuncsByUrl(self, url):
@@ -387,12 +387,12 @@ class ProviderContext:
         lastRead = self.sfa.getDateTimeModified(url)
         if entry:
             if hasChanged(entry.lastRead, lastRead):
-                log.debug("file " + url + " has changed, reloading")
+                log.debug("file {} has changed, reloading".format(url))
             else:
                 load = False
 
         if load:
-            log.debug("opening >" + url + "<")
+            log.debug("opening >{}<".format(url))
 
             src = readTextFromStream(self.sfa.openFileRead(url))
             checkForPythonPathBesideScript(url[0:url.rfind('/')])
@@ -461,14 +461,14 @@ class ScriptBrowseNode(BrowseNodeBase, XPropertySet, XInvocation, XActionListene
             elif name == "Editable" and ENABLE_EDIT_DIALOG:
                 ret = not self.provCtx.sfa.isReadOnly(self.uri)
 
-            log.debug("ScriptBrowseNode.getPropertyValue called for " + name + ", returning " + str(ret))
+            log.debug("ScriptBrowseNode.getPropertyValue called for {}, returning {}".format(name, ret))
         except Exception as e:
             log.error("ScriptBrowseNode.getPropertyValue error " + lastException2String())
             raise
 
         return ret
     def setPropertyValue(self, name, value):
-        log.debug("ScriptBrowseNode.setPropertyValue called " + name + "=" + str(value))
+        log.debug("ScriptBrowseNode.setPropertyValue called {} = {}".format(name, value))
     def getPropertySetInfo(self):
         log.debug("ScriptBrowseNode.getPropertySetInfo called ")
         return None
@@ -593,7 +593,7 @@ class DirBrowseNode(BrowseNodeBase):
             return tuple(browseNodeList)
         except Exception as e:
             text = lastException2String()
-            log.error("DirBrowseNode error: " + str(e) + " while evaluating " + self.uri)
+            log.error("DirBrowseNode error: {} while evaluating {}".format(e, self.uri))
             log.error(text)
             return ()
 
@@ -657,7 +657,7 @@ def getPathesFromPackage( rootUrl, sfa ):
         ret = tuple(handler.urlList)
     except UnoException as e:
         text = lastException2String()
-        log.debug("getPathesFromPackage " + fileUrl + " Exception: " + text)
+        log.debug("getPathesFromPackage {} Exception: ".format(fileUrl, text))
         pass
     return ret
 
@@ -730,13 +730,13 @@ def getPackageName2PathMap(sfa, storageType):
     log.debug("pythonscript: getPackageName2PathMap end getDeployedPackages (" + str(len(packages)) + ")")
 
     for package in packages:
-        log.debug("inspecting package " + package.getName() + "(" + package.getIdentifier().Value + ")")
+        log.debug("inspecting package {} ({})".format(package.getName(), package.getIdentifier().Value))
         transientPathElement = penultimateElement(package.getURL())
         uri = expandUri(package.getURL())
         pathes = getPathesFromPackage(uri, sfa)
         if len(pathes) > 0:
             # map package name to url, we need this later
-            log.isErrorLevel() and log.error("adding Package " + transientPathElement + " " + str(pathes))
+            log.isErrorLevel() and log.error("adding Package {} {}".format(transientPathElement, pathes))
             ret[lastElement(uri)] = Package(pathes, transientPathElement)
     return ret
 
@@ -780,9 +780,8 @@ class PythonScript(unohelper.Base, XScript):
         except UnoException as e:
             # UNO Exception continue to fly ...
             text = lastException2String()
-            complete = "Error during invoking function " + \
-                str(self.func.__name__) + " in module " + \
-                self.mod.__file__ + " (" + text + ")"
+            complete = "Error during invoking function {} in module {} ({})".format(
+                            self.func.__name__, self.mod.__file__, text)
             log.debug(complete)
             # some people may beat me up for modifying the exception text,
             # but otherwise office just shows
@@ -793,9 +792,8 @@ class PythonScript(unohelper.Base, XScript):
         except Exception as e:
             # General python exception are converted to uno RuntimeException
             text = lastException2String()
-            complete = "Error during invoking function " + \
-                str(self.func.__name__) + " in module " + \
-                self.mod.__file__ + " (" + text + ")"
+            complete = "Error during invoking function {} in module {} ({})".format(
+                            self.func.__name__, self.mod.__file__, text)
             log.debug(complete)
             raise RuntimeException(complete, self)
         log.debug("PythonScript.invoke ret = " + str(ret))
@@ -917,7 +915,7 @@ class PythonScriptProvider(BrowseNodeBase, XScriptProvider, XNameContainer):
             log.debug("hasByName called " + str(name))
             uri = expandUri(name)
             ret = self.provCtx.isUrlInPackage(uri)
-            log.debug("hasByName " + uri + " " + str(ret))
+            log.debug("hasByName {} {}".format(uri, ret))
             return ret
         except Exception as e:
             text = lastException2String()
@@ -930,23 +928,23 @@ class PythonScriptProvider(BrowseNodeBase, XScriptProvider, XNameContainer):
         if self.provCtx.isUrlInPackage(uri):
             self.provCtx.removePackageByUrl(uri)
         else:
-            log.debug("removeByName unknown uri " + str(name) + ", ignoring")
+            log.debug("removeByName unknown uri {}, ignoring".format(name))
             raise NoSuchElementException(uri + "is not in package" , self)
         log.debug("removeByName called" + str(uri) + " successful")
 
     def insertByName(self, name, value):
-        log.debug("insertByName called " + str(name) + " " + str(value))
+        log.debug("insertByName called {} {}".format(name, value))
         uri = expandUri(name)
         if isPyFileInPath(self.provCtx.sfa, uri):
             self.provCtx.addPackageByUrl(uri)
         else:
             # package is no python package ...
-            log.debug("insertByName: no python files in " + str( uri ) + ", ignoring")
+            log.debug("insertByName: no python files in {}, ignoring".format(uri))
             raise IllegalArgumentException(uri + " does not contain .py files", self, 1)
         log.debug("insertByName called " + str(uri) + " successful")
 
     def replaceByName(self, name, value):
-        log.debug("replaceByName called " + str(name) + " " + str(value))
+        log.debug("replaceByName called {} {}".format(name, value))
         self.removeByName(name)
         self.insertByName(name)
         log.debug("replaceByName called" + str(uri) + " successful")
