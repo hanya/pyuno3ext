@@ -204,7 +204,7 @@ class MyUriHelper:
     def scriptURI2StorageUri(self, scriptURI):
         try:
             myUri = self.m_uriRefFac.parse(scriptURI)
-            ret = self.m_baseUri + "/" + myUri.getName().replace( "|", "/" )
+            ret = self.m_baseUri + "/" + myUri.getName().replace("|", "/")
             log.debug("converting scriptURI="+scriptURI + " to storageURI=" + ret)
             return ret
         except UnoException as e:
@@ -582,9 +582,8 @@ class DirBrowseNode(BrowseNodeBase):
     def getChildNodes(self):
         try:
             log.debug("DirBrowseNode.getChildNodes called for " + self.uri)
-            contents = self.provCtx.sfa.getFolderContents(self.uri, True)
             browseNodeList = []
-            for url in contents:
+            for url in self.provCtx.sfa.getFolderContents(self.uri, True):
                 if self.provCtx.sfa.isFolder(url) and not url.endswith("/pythonpath"):
                     log.debug("adding DirBrowseNode " + url)
                     browseNodeList.append(DirBrowseNode(self.provCtx, url, url[url.rfind("/")+1:]))
@@ -632,8 +631,7 @@ class ManifestHandler(XDocumentHandler, unohelper.Base):
 
 def isPyFileInPath(sfa, path):
     ret = False
-    contents = sfa.getFolderContents(path, True)
-    for i in contents:
+    for i in sfa.getFolderContents(path, True):
         if sfa.isFolder(i):
             ret = isPyFileInPath(sfa, i)
         else:
@@ -653,7 +651,7 @@ def getPathesFromPackage( rootUrl, sfa ):
         handler = ManifestHandler(rootUrl)
         parser.setDocumentHandler(handler)
         parser.parseStream(InputSource(inputStream, "", fileUrl, fileUrl))
-        for i in tuple(handler.urlList):
+        for i in handler.urlList:
             if not isPyFileInPath(sfa, i):
                 handler.urlList.remove(i)
         ret = tuple(handler.urlList)
@@ -774,6 +772,7 @@ class PythonScript(unohelper.Base, XScript):
     def __init__(self, func, mod):
         self.func = func
         self.mod = mod
+    
     def invoke(self, args, out, outindex):
         log.debug("PythonScript.invoke " + str(args))
         try:
@@ -816,12 +815,7 @@ class PythonScriptProvider(BrowseNodeBase, XScriptProvider, XNameContainer):
     def __init__(self, ctx, *args):
         super().__init__(None, "", LANGUAGENAME)
         if log.isDebugLevel():
-            mystr = ""
-            for i in args:
-                if len(mystr) > 0:
-                    mystr = mystr +","
-                mystr = mystr + str(i)
-            log.debug("Entering PythonScriptProvider.ctor" + mystr)
+            log.debug("Entering PythonScriptProvider.ctor" + ", ".join(map(str, args)))
 
         doc = None
         inv = None
@@ -884,13 +878,12 @@ class PythonScriptProvider(BrowseNodeBase, XScriptProvider, XNameContainer):
             storageUri = self.provCtx.getStorageUrlFromPersistentUrl(
                 self.provCtx.uriHelper.getStorageURI(scriptUri))
             log.debug("getScript: storageUri = " + storageUri)
-            fileUri = storageUri[0:storageUri.find("$")]
-            funcName = storageUri[storageUri.find("$")+1:]
+            file_uri, func_name = storageUri.split("$", 1)
 
-            mod = self.provCtx.getModuleByUrl(fileUri)
+            mod = self.provCtx.getModuleByUrl(file_uri)
             log.debug(" got mod " + str(mod))
 
-            func = mod.__dict__[funcName]
+            func = mod.__dict__[func_name]
 
             log.debug("got func " + str(func))
             return PythonScript(func, mod)
