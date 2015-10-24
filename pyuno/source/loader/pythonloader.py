@@ -44,13 +44,13 @@ def checkForPythonPathBesideComponent(url):
     path = unohelper.fileUrlToSystemPath(url + "/pythonpath.zip");
     if DEBUG == 1:
         print("checking for existence of " + encfile(path))
-    if 1 == os.access(encfile(path), os.F_OK) and not path in sys.path:
+    if os.access(encfile(path), os.F_OK) and not path in sys.path:
         if DEBUG == 1:
             print("adding " + encfile(path) + " to sys.path")
         sys.path.append(path)
 
     path = unohelper.fileUrlToSystemPath(url + "/pythonpath");
-    if 1 == os.access(encfile(path), os.F_OK) and not path in sys.path:
+    if os.access(encfile(path), os.F_OK) and not path in sys.path:
         if DEBUG == 1:
             print("adding " + encfile(path) + " to sys.path")
         sys.path.append(path)
