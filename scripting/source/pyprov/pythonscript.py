@@ -134,7 +134,6 @@ from com.sun.star.awt import XActionListener
 from com.sun.star.script.provider import XScriptProvider, XScript, XScriptContext, ScriptFrameworkErrorException
 from com.sun.star.script.browse import XBrowseNode
 from com.sun.star.script.browse.BrowseNodeTypes import SCRIPT, CONTAINER, ROOT
-from com.sun.star.util import XModifyListener
 
 LANGUAGENAME = "Python"
 GLOBAL_SCRIPTCONTEXT_NAME = "XSCRIPTCONTEXT"
@@ -691,14 +690,6 @@ class CommandEnvironment(unohelper.Base, XCommandEnvironment):
     def getProgressHandler(self):
         return self.progressHandler
 
-#maybe useful for debugging purposes
-#class ModifyListener( unohelper.Base, XModifyListener ):
-#    def __init__( self ):
-#        pass
-#    def modified( self, event ):
-#        log.debug( "pythonscript: ModifyListener.modified " + str( event ) )
-#    def disposing( self, event ):
-#        log.debug( "pythonscript: ModifyListener.disposing " + str( event ) )
 
 def getModelFromDocUrl(ctx, url):
     """Get document model from document url."""
@@ -891,10 +882,10 @@ class PythonScriptProvider(BrowseNodeBase, XScriptProvider, XNameContainer):
             log.debug("getScript " + scriptUri + " invoked")
 
             storageUri = self.provCtx.getStorageUrlFromPersistentUrl(
-                self.provCtx.uriHelper.getStorageURI(scriptUri));
+                self.provCtx.uriHelper.getStorageURI(scriptUri))
             log.debug("getScript: storageUri = " + storageUri)
             fileUri = storageUri[0:storageUri.find("$")]
-            funcName = storageUri[storageUri.find("$")+1:len(storageUri)]
+            funcName = storageUri[storageUri.find("$")+1:]
 
             mod = self.provCtx.getModuleByUrl(fileUri)
             log.debug(" got mod " + str(mod))
