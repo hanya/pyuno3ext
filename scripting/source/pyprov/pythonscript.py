@@ -84,7 +84,7 @@ def getLogTarget():
                 systemPath = uno.fileUrlToSystemPath(userInstallation + "/Scripts/python/log.txt")
                 ret = open(systemPath , "a")
         except:
-            print("Exception during creation of pythonscript logfile: " + lastException2String() + "\n, delagating log to stdout\n")
+            print("Exception during creation of pythonscript logfile: {}\n, delagating log to stdout\n" + lastException2String())
     return ret
 
 class Logger(LogLevel):
@@ -177,7 +177,7 @@ class MyUriHelper:
                 "user:uno_packages" : "vnd.sun.star.expand:$UNO_USER_PACKAGES_CACHE/uno_packages"}
             self.m_baseUri = expandUri(location_map[location])
             self.m_scriptUriLocation = location
-        log.debug("initialized urihelper with baseUri={},m_scriptUriLocation={}", self.m_baseUri, self.m_scriptUriLocation)
+        log.debug("initialized urihelper with baseUri={}, m_scriptUriLocation={}", self.m_baseUri, self.m_scriptUriLocation)
 
     def getRootStorageURI(self):
         return self.m_baseUri
@@ -208,7 +208,7 @@ class MyUriHelper:
             return ret
         except UnoException as e:
             log.error("error during converting scriptURI={}: {}", scriptURI, e.Message)
-            raise RuntimeException( "pythonscript:scriptURI2StorageUri: " +e.getMessage(), None)
+            raise RuntimeException( "pythonscript:scriptURI2StorageUri: " + e.getMessage(), None)
         except Exception as e:
             log.error("error during converting scriptURI={}: {}", scriptURI, e)
             raise RuntimeException( "pythonscript:scriptURI2StorageUri: " + str(e), None)
@@ -334,7 +334,7 @@ class ProviderContext:
             pos = len(self.rootUrl)+1
             packageName = url[pos:url.find("/",pos+1)]
             package = self.mapPackageName2Path[packageName]
-            ret = url[0:pos]+ package.transientPathElement + "/" + url[pos:]
+            ret = url[0:pos] + package.transientPathElement + "/" + url[pos:]
         log.debug("getStorageUrlFromPersistentUrl {} -> {}", url, ret)
         return ret
 
@@ -389,8 +389,8 @@ class ProviderContext:
             log.debug("opening >{}<", url)
 
             src = readTextFromStream(self.sfa.openFileRead(url))
-            checkForPythonPathBesideScript(url[0:url.rfind('/')])
             src = ensureSourceState(src)
+            checkForPythonPathBesideScript(url[0:url.rfind('/')])
 
             # execute the module
             entry = ModuleEntry(lastRead, type(sys)("ooo_script_framework"))
@@ -403,11 +403,11 @@ class ProviderContext:
             log.debug("mapped {} to {}", url, entry.module)
         return  entry.module
 
-#--------------------------------------------------
+
 def isScript(candidate):
     return isinstance(candidate, type(isScript))
 
-#-------------------------------------------------------
+
 class BrowseNodeBase(unohelper.Base, XBrowseNode):
     
     NODE_TYPE = CONTAINER
@@ -479,7 +479,6 @@ class ScriptBrowseNode(BrowseNodeBase, XPropertySet, XInvocation):
         return False
 
 
-#-------------------------------------------------------
 class FileBrowseNode(BrowseNodeBase):
     def __init__(self, provCtx, uri, name):
         super().__init__(provCtx, uri, name)
@@ -737,15 +736,14 @@ def expandUri(uri):
         uri = uno.absolutize("", uri)   # necessary to get rid of .. in uri
     return uri
 
-#--------------------------------------------------------------
+
 class PythonScriptProvider(BrowseNodeBase, XScriptProvider, XNameContainer):
     def __init__(self, ctx, *args):
         super().__init__(None, "", LANGUAGENAME)
         if log.isDebugLevel():
             log.debug("Entering PythonScriptProvider.ctor {}", ", ".join(map(str, args)))
 
-        doc = None
-        inv = None
+        doc = inv = None
         storageType = ""
 
         if isinstance(args[0], str):
