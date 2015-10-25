@@ -404,10 +404,6 @@ class ProviderContext:
         return  entry.module
 
 
-def isScript(candidate):
-    return isinstance(candidate, type(isScript))
-
-
 class BrowseNodeBase(unohelper.Base, XBrowseNode):
     
     NODE_TYPE = CONTAINER
