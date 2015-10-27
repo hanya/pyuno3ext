@@ -1,10 +1,12 @@
---- setup.py	2015-09-13 20:41:26.000000000 +0900
-+++ setup.py	2015-10-21 23:11:55.556445175 +0900
-@@ -100,60 +100,60 @@
+--- setup.py	2014-10-12 16:03:54.000000000 +0900
++++ _setup.py	2015-10-27 17:12:30.214400329 +0900
+@@ -86,61 +86,61 @@
+         # system, but with only header files and libraries.
          sysroot = macosx_sdk_root()
  
-     # Check the standard locations
+-    # Check the standard locations
 -    for dir in std_dirs:
++    # Check the additional directories
 +    for dir in paths:
          f = os.path.join(dir, filename)
  
@@ -14,8 +16,9 @@
 -        if os.path.exists(f): return []
 +        if os.path.exists(f): return [dir]
  
-     # Check the additional directories
+-    # Check the additional directories
 -    for dir in paths:
++    # Check the standard locations
 +    for dir in std_dirs:
          f = os.path.join(dir, filename)
  
@@ -37,9 +40,8 @@
  
      if host_platform == 'darwin':
          sysroot = macosx_sdk_root()
--
+ 
 -    # Check whether the found file is in one of the standard directories
-+    
 +    # Otherwise, it must have been in one of the additional directories,
 +    # so we have to figure out which one.
      dirname = os.path.dirname(result)
@@ -55,7 +57,7 @@
  
          if p == dirname:
 -            return [ ]
-+            return [ p ]
++            return [p]
  
 -    # Otherwise, it must have been in one of the additional directories,
 -    # so we have to figure out which one.
@@ -76,7 +78,7 @@
      else:
          assert False, "Internal error: Path not found in std_dirs or paths"
  
-@@ -779,6 +779,7 @@
+@@ -741,6 +741,7 @@
                                 depends = ['socketmodule.h']) )
          # Detect SSL support for the socket module (via _ssl)
          search_for_ssl_incs_in = [
@@ -84,7 +86,7 @@
                                '/usr/local/ssl/include',
                                '/usr/contrib/ssl/include/'
                               ]
-@@ -791,7 +792,8 @@
+@@ -753,7 +754,8 @@
              if krb5_h:
                  ssl_incs += krb5_h
          ssl_libs = find_library_file(self.compiler, 'ssl',lib_dirs,
@@ -94,7 +96,7 @@
                                        '/usr/contrib/ssl/lib/'
                                       ] )
  
-@@ -800,6 +802,7 @@
+@@ -762,6 +764,7 @@
              exts.append( Extension('_ssl', ['_ssl.c'],
                                     include_dirs = ssl_incs,
                                     library_dirs = ssl_libs,
@@ -102,7 +104,7 @@
                                     libraries = ['ssl', 'crypto'],
                                     depends = ['socketmodule.h']), )
          else:
-@@ -841,6 +844,7 @@
+@@ -803,6 +806,7 @@
                                         depends = ['hashlib.h'],
                                         include_dirs = ssl_incs,
                                         library_dirs = ssl_libs,
@@ -110,3 +112,4 @@
                                         libraries = ['ssl', 'crypto']) )
              else:
                  print("warning: openssl 0x%08x is too old for _hashlib" %
+flag
