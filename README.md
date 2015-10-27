@@ -8,13 +8,15 @@ The code is based on Apache OpenOffice revision 1591060.
 
 Supported Environments
 ---------
-* Linux x86_64 (Tested)
+* Linux x86_64
+* Linux x86
 
 
 Restrictions
 ---------
 * You need write permission to program/unorc or uno.ini file to disable original Python.
 * This extension can not coexist with the default Python.
+* ToDo: Python 3.3 might not work well.
 
 
 How to Build
@@ -22,6 +24,7 @@ How to Build
 Please read How to Use section before building the extension.
 To build extensions, Apache OpenOffice 4.X and its SDK. Setup the SDK 
 before starting to build the extension, see sdk/index.html to begin.
+Requires libboost-dev to build.
 
     git clone https://github.com/hanya/pyuno3ext.git
     cd pyuno3ext
