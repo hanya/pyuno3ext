@@ -22,9 +22,11 @@ Restrictions
 How to Build
 --------
 Please read How to Use section before building the extension.
-To build extensions, Apache OpenOffice 4.X and its SDK. Setup the SDK 
-before starting to build the extension, see sdk/index.html to begin.
-Requires libboost-dev to build.
+
+To build extensions, Apache OpenOffice 4.X and its SDK are required. 
+Setup the SDK before starting to build the extension, 
+see sdk/index.html to begin with.
+Requires libboost-dev to build on Linux environment.
 
     git clone https://github.com/hanya/pyuno3ext.git
     cd pyuno3ext
@@ -33,7 +35,7 @@ Requires libboost-dev to build.
 
 PC_NAME should be name of your computer.
 
-After that you can find the following files in the build directory.
+After that you can find the following files in the build/ directory.
 * Python3Loader-VERSION-PLATFORM.oxt
 * Python3Script-VERSION.oxt
 
@@ -51,6 +53,7 @@ the original implementations. There are two ways to do.
 First way, this might not safe to your extensions. With this ways, 
 the order of loading components would change. It might cause some error.
 Change UNO_SERVICES variable in program/unorc or uno.ini file as follows.
+
 From 
 
     UNO_SERVICES=${ORIGIN}/services.rdb ${URE_MORE_SERVICES}
@@ -66,6 +69,7 @@ The second way is safer than the first one. Copy tools/pyuno3ext.py file
 to your USER/Scripts/python directory. Execute "Create_services_rdb" function 
 through Tools - Macros - Macro Organizer - Python window. Store to somewhere 
 and edit the UNO_SERVICES variable in program/unorc or uno.ini.
+
 From 
 
     UNO_SERVICES=${ORIGIN}/services.rdb ${URE_MORE_SERVICES}
@@ -74,7 +78,7 @@ to
 
     UNO_SERVICES=file:///home/user/Documents/services.rdb ${URE_MORE_SERVICES}
 
-, path to the rdb file should be match with the location you have saved.
+path to the rdb file should be match with the location you have saved.
 
 Then restart your office. 
 You can check the current state with "Show_Information" function.
