@@ -8,4 +8,4 @@ Changes are summarized below:
 * mailmerge: use SMTP_SSL when SSL type is choosen
 * pyuno: replace import hack with import hook
 * pythonscript: without imp module to instantiate new module
-
+* python.sh: embedded in tools/pyuno3ext.py file and change environmental variables

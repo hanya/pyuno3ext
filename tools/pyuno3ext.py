@@ -1,4 +1,54 @@
 
+PYTHON_SH_BASE = """#!/bin/sh
+#**************************************************************
+#  
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#  
+#    http://www.apache.org/licenses/LICENSE-2.0
+#  
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
+#  under the License.
+#  
+#**************************************************************
+
+sd_prog="%%OFFICE_PROGRAM%%"
+ext_dir="%%EXTENSION_DIR%%"
+
+# Set PATH so that crash_report is found:
+PATH=$sd_prog${PATH+:$PATH}
+export PATH
+
+# Set LD_LIBRARY_PATH so that "import pyuno" finds libpyuno.so:
+LD_LIBRARY_PATH=$ext_dir/lib:$sd_prog:${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH
+
+# Set UNO_PATH so that "officehelper.bootstrap()" can find soffice executable:
+: ${UNO_PATH=$sd_prog}
+export UNO_PATH
+
+# Set URE_BOOTSTRAP so that "uno.getComponentContext()" bootstraps a complete
+# OOo UNO environment:
+: ${URE_BOOTSTRAP=vnd.sun.star.pathname:$sd_prog/fundamentalrc}
+export URE_BOOTSTRAP
+PYTHONPATH=$ext_dir/lib/python%%PYVERSION%%:$ext_dir/lib/python%%PYVERSION%%/lib-dynload:$ext_dir/lib
+export PYTHONPATH
+PYTHONHOME=$ext_dir
+export PYTHONHOME
+
+# execute binary
+exec "$ext_dir/bin/python3" "$@"
+"""
+
 import xml.dom.minidom
 import unohelper
 import os
@@ -165,9 +215,11 @@ def Show_Information(*args):
     doc.getText().setString(s)
 
 def Create_services_rdb(*args):
+    """ Creates services.rdb file which do not contain registration about 
+    default Python related components. """
     ctx = XSCRIPTCONTEXT.getComponentContext()
     dest = _get_path(ctx, save=True, default_name="services.rdb", 
-            filter_names=(("RDB Files (*rdb)", "*.rdb"),), default_filter=0)
+            filter_names=(("RDB Files (*.rdb)", "*.rdb"),), default_filter=0)
     if not dest:
         return
     parser = Parser(ctx, dest)
@@ -190,4 +242,36 @@ def _get_path(ctx, save=False, default_name=None, filter_names=None, default_fil
     else:
         return
 
-g_exportedScripts = Create_services_rdb, Show_Information
+def Create_Python_sh(*args):
+    """ Creates shell script which execute python3 with environmental variables 
+    to connect the office instance from the extension package. """
+    ext_id = "mytools.loader.Python3"
+    import sys
+    import stat
+    import uno
+    ctx = XSCRIPTCONTEXT.getComponentContext()
+    def create(name):
+        return ctx.getServiceManager().createInstanceWithContext(name, ctx)
+    
+    dest = _get_path(ctx, save=True, default_name="python", 
+            filter_names=(("All Files (*.*)", "*.*"),), default_filter=0)
+    if not dest:
+        return
+    sd_prog = uno.fileUrlToSystemPath(create("com.sun.star.util.PathSubstitution").substituteVariables("$(prog)", True))
+    
+    prov = ctx.getValueByName("/singletons/com.sun.star.deployment.PackageInformationProvider")
+    ext_dir = uno.fileUrlToSystemPath(prov.getPackageLocation(ext_id))
+    
+    values = (("%%OFFICE_PROGRAM%%", sd_prog), ("%%EXTENSION_DIR%%", ext_dir), 
+              ("%%PYVERSION%%", "{}.{}".format(sys.version_info.major, sys.version_info.minor)))
+    s = PYTHON_SH_BASE
+    for name, value in values:
+        s = s.replace(name, value)
+    
+    with open(dest, "w", encoding="utf-8") as f:
+        f.write(s)
+    if os.path.exists(dest):
+        st = os.stat(dest)
+        os.chmod(dest, st.st_mode | stat.S_IEXEC)
+
+g_exportedScripts = Create_services_rdb, Show_Information, Create_Python_sh
