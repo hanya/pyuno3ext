@@ -89,6 +89,17 @@ It generates helper shell script to execute python executable,
 which has the same function with the original python shipped with the office.
 
 
+2to3
+--------
+tools/pyuno3ext.py file contains helper function "Execute_2to3" to execute 
+2to3 tool which helps you to migrate your code into Python 3.
+
+You can choose a file or content of a directory to analyze on the dialog. 
+The result of the analysis will be shown in a Writer document. 
+If you want to store the migrated result, choose some options on the dialog. 
+You might need additonal modififcations even after the migration on your code.
+
+
 Python Script
 --------
 You can execute Python macros stored in USER/Scripts/python which 
