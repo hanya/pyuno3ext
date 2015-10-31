@@ -138,10 +138,10 @@ class ImplementationHelper:
         self.impls[implementationName] =  _ImplementationHelperEntry(ctor,serviceNames)
 
     def writeRegistryInfo( self, regKey, smgr ):
-        for i in list(self.impls.items()):
-            keyName = "/"+ i[0] + "/UNO/SERVICES"
+        for impl_name, entry in self.impls.items():
+            keyName = "/"+ impl_name + "/UNO/SERVICES"
             key = regKey.createKey( keyName )
-            map(key.createKey, i[1].serviceNames)
+            map(key.createKey, entry.serviceNames)
         return 1
 
     def getComponentFactory( self, implementationName , regKey, smgr ):
