@@ -297,18 +297,8 @@ def _uno_struct__dir__(self):
 
 # referenced from pyuno shared lib and pythonscript.py
 def _uno_extract_printable_stacktrace(trace):
-    ret = ""
-    try:
-        lst = traceback.extract_tb(trace)
-        max = len(lst)
-        for j in range(max):
-            i = lst[max-j-1]
-            ret = ret + "  " + str(i[0]) + ":" + \
-                  str(i[1]) + " in function " + \
-                  str(i[2])  + "() [" + str(i[3]) + "]\n"
-    except:
-        ret = "Couldn't import traceback module"
-    return ret
+    return "\n".join(["  {}:{} in function {}() [{}]".format(*entries) 
+                                for entries in traceback.extract_tb(trace)[::-1]])
 
 
 class UNOModule(types.ModuleType):
