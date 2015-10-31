@@ -136,7 +136,7 @@ class Enum:
     def __eq__(self, that):
         if not isinstance(that, Enum):
             return False
-        return (self.typeName == that.typeName) and (self.value == that.value)
+        return self.typeName == that.typeName and self.value == that.value
     
     def __ne__(self, other):
         return not self.__eq__(other)
