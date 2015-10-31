@@ -141,8 +141,7 @@ class ImplementationHelper:
         for i in list(self.impls.items()):
             keyName = "/"+ i[0] + "/UNO/SERVICES"
             key = regKey.createKey( keyName )
-            for serviceName in i[1].serviceNames:
-                key.createKey( serviceName )
+            map(key.createKey, i[1].serviceNames)
         return 1
 
     def getComponentFactory( self, implementationName , regKey, smgr ):
@@ -174,8 +173,7 @@ def writeRegistryInfoHelper( smgr, regKey, seqEntries ):
     for entry in seqEntries:
         keyName = "/"+ entry.implName + "/UNO/SERVICES"
         key = regKey.createKey( keyName )
-        for serviceName in entry.supportedServices:
-            key.createKey( serviceName )
+        map(key.createKey, entry.supportedServices)
 
 def systemPathToFileUrl( systemPath ):
     "returns a file-url for the given system path"
@@ -228,23 +226,18 @@ def _unohelper_getHandle( self):
     if self.__class__ in _g_typeTable:
         ret = _g_typeTable[self.__class__]
     else:
-        names = {}
+        names = set()
         traverse = list(self.__class__.__bases__)
         while len( traverse ) > 0:
             item = traverse.pop()
             bases = item.__bases__
             if uno.isInterface( item ):
-                names[item.__pyunointerface__] = None
+                names.add(item.__pyunointerface__)
             elif len(bases) > 0:
                 # the "else if", because we only need the most derived interface
                 traverse = traverse + list(bases)#
 
-        lst = list(names.keys())
-        types = []
-        for x in lst:
-            t = uno.getTypeByName( x )
-            types.append( t )
-
+        types = [uno.getTypeByName(name) for name in names]
         ret = tuple(types) , uno.generateUuid()
         _g_typeTable[self.__class__] = ret
     return ret
