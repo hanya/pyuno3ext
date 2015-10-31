@@ -130,8 +130,8 @@ class PyMailSMTPService(unohelper.Base, XSmtpService):
             self.server.starttls()
             self.server.ehlo()
 
-        user = xAuthenticator.getUserName().encode('ascii')
-        password = xAuthenticator.getPassword().encode('ascii')
+        user = xAuthenticator.getUserName()
+        password = xAuthenticator.getPassword()
         if user != '':
             if dbg:
                 out.write('Logging in, username of %s\n' % user)
@@ -315,8 +315,8 @@ class PyMailIMAPService(unohelper.Base, XMailService):
             self.server = imaplib.IMAP4(server, port)
         out.write("AFTER\n")
 
-        user = xAuthenticator.getUserName().encode('ascii')
-        password = xAuthenticator.getPassword().encode('ascii')
+        user = xAuthenticator.getUserName()
+        password = xAuthenticator.getPassword()
         if user != '':
             if dbg:
                 out.write('Logging in, username of %s\n' % user)
@@ -391,8 +391,8 @@ class PyMailPOP3Service(unohelper.Base, XMailService):
             self.server = poplib.POP3(server, port, timeout=tout)
         out.write("AFTER\n")
 
-        user = xAuthenticator.getUserName().encode('ascii')
-        password = xAuthenticator.getPassword().encode('ascii')
+        user = xAuthenticator.getUserName()
+        password = xAuthenticator.getPassword()
         if dbg:
             out.write('Logging in, username of %s\n' % user)
         self.server.user(user)
