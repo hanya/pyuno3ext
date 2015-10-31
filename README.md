@@ -83,10 +83,14 @@ path to the rdb file should be match with the location you have saved.
 Then restart your office. 
 You can check the current state with "Show_Information" function.
 
+
+For Interprocess Communication
+--------
 If you want to use the Python from the extension package, execute 
 "Create_Python_sh" function from tools/pyuno3ext.py file. 
 It generates helper shell script to execute python executable, 
-which has the same function with the original python shipped with the office.
+which has the same function with the original python shipped with the office. 
+You can connect to the office instance with it.
 
 
 2to3
