@@ -22,23 +22,9 @@
 # Caolan McNamara caolanm@redhat.com
 # a simple email mailmerge component
 
-# manual installation for hackers, not necessary for users
-# cp mailmerge.py /usr/lib/openoffice.org2.0/program
-# cd /usr/lib/openoffice.org2.0/program
-# ./unopkg add --shared mailmerge.py
-# edit ~/.openoffice.org2/user/registry/data/org/openoffice/Office/Writer.xcu
-# and change EMailSupported to as follows...
-#  <prop oor:name="EMailSupported" oor:type="xs:boolean">
-#   <value>true</value>
-#  </prop>
-
 import unohelper
 import uno
 import re
-
-#to implement com::sun::star::mail::XMailServiceProvider
-#and
-#to implement com.sun.star.mail.XMailMessage
 
 from com.sun.star.mail import XMailServiceProvider
 from com.sun.star.mail import XMailService
