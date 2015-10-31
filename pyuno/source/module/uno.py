@@ -328,33 +328,36 @@ class UNOModule(types.ModuleType):
     
     def __getattr__(self, elt):
         value = None
+        _pyuno = pyuno
+        path = self.__path__
+        name = path + "." + elt
         
-        RuntimeException = pyuno.getClass("com.sun.star.uno.RuntimeException")
+        RuntimeException = _pyuno.getClass("com.sun.star.uno.RuntimeException")
         try:
-            value = pyuno.getClass(self.__path__ + "." + elt)
+            value = _pyuno.getClass(name)
         except RuntimeException:
             try:
-                value = Enum(self.__path__, elt)
+                value = Enum(path, elt)
             except RuntimeException:
                 try:
-                    value = pyuno.getConstantByName(self.__path__ + "." + elt)
+                    value = _pyuno.getConstantByName(name)
                 except RuntimeException:
                     if elt.startswith("typeOf"):
                         try:
-                            value = pyuno.getTypeByName(self.__path__ + "." + elt[6:])
+                            value = _pyuno.getTypeByName(path + "." + elt[6:])
                         except RuntimeException:
                             raise AttributeError(
-                                "type {}.{} is unknown".format(self.__path__, elt))
+                                "type {}.{} is unknown".format(path, elt))
                     elif elt == "__all__":
                         try:
-                            module_names = pyuno.getModuleElementNames(self.__path__)
+                            module_names = _pyuno.getModuleElementNames(path)
                             self.__all__ = module_names
                             return module_names
                         except RuntimeException:
                             raise AttributeError("__all__")
                     else:
                         raise AttributeError(
-                            "type {}.{} is unknown".format(self.__path__, elt))
+                            "type {}.{} is unknown".format(path, elt))
         setattr(self, elt, value)
         return value
 
@@ -366,11 +369,11 @@ class UNOModuleLoader(importlib.abc.Loader):
     """
     
     def load_module(self, fullname):
-        mod = None
-        if fullname in sys.modules:
+        try:
             return sys.modules[fullname]
-        else:
-            mod = UNOModule(fullname, self)
+        except:
+            pass
+        mod = UNOModule(fullname, self)
         sys.modules.setdefault(fullname, mod)
         return mod
 
