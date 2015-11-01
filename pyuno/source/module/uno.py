@@ -103,24 +103,6 @@ def setCurrentContext(newContext):
     return pyuno.setCurrentContext(newContext)
 
 
-def hasModule(name):
-    """ Check UNO module is there by its name. 
-    
-        Valid modules are module, constants and enum.
-    """
-    return pyuno.hasModule(name)
-
-
-def getModuleElementNames(name):
-    """ Get list of sub element names by name.
-    
-        Valid elements are module, interface, struct without template, 
-        exception, enum and constants. And also list of names in enum and 
-        constants can be taken.
-    """
-    return pyuno.getModuleElementNames(name)
-
-
 class Enum:
     "Represents a UNO idl enum, use an instance of this class to explicitly pass a boolean to UNO"
     #typeName the name of the enum as a string
@@ -301,7 +283,7 @@ def _uno_extract_printable_stacktrace(trace):
                                 for entries in traceback.extract_tb(trace)[::-1]])
 
 
-class UNOModule(types.ModuleType):
+class _UNOModule(types.ModuleType):
     """ Extended module class for UNO based modules. 
     
         Real value is not taken from pyuno until first request. 
@@ -352,7 +334,7 @@ class UNOModule(types.ModuleType):
         return value
 
 
-class UNOModuleLoader(importlib.abc.Loader):
+class _UNOModuleLoader(importlib.abc.Loader):
     """ UNO module loader. 
     
         Creates new customized module for UNO if not yet loaded.
@@ -363,19 +345,19 @@ class UNOModuleLoader(importlib.abc.Loader):
             return sys.modules[fullname]
         except:
             pass
-        mod = UNOModule(fullname, self)
+        mod = _UNOModule(fullname, self)
         sys.modules.setdefault(fullname, mod)
         return mod
 
 
-class UNOModuleFinder(importlib.abc.Finder):
+class _UNOModuleFinder(importlib.abc.Finder):
     """ UNO module finder. 
     
         Generate module loader for UNO module. Valid module names are 
         one of module, enum and constants in IDL definitions.
     """
     
-    LOADER = UNOModuleLoader()
+    LOADER = _UNOModuleLoader()
     
     def find_module(self, fullname, path=None):
         if pyuno.hasModule(fullname):
@@ -383,4 +365,4 @@ class UNOModuleFinder(importlib.abc.Finder):
         return None
 
 
-sys.meta_path.append(UNOModuleFinder())
+sys.meta_path.append(_UNOModuleFinder())
