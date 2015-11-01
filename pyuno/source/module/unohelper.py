@@ -233,7 +233,7 @@ def _unohelper_getHandle( self):
             bases = item.__bases__
             if uno.isInterface( item ):
                 names.add(item.__pyunointerface__)
-            elif len(bases) > 0:
+            elif bases:
                 # the "else if", because we only need the most derived interface
                 traverse = traverse + list(bases)#
 
