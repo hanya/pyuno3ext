@@ -135,10 +135,10 @@ ByteSequence instance.
 PyUNO uses custom import function to import UNO values in uno.py. 
 It has some problems when other module uses the same way. 
 Import hook is introduced by importlib module on Python 3.1. 
-We should be use to import UNO values.
+We should use it to import UNO values.
 
-hasModule() and getModuleElementNames() methods are introduced 
-to get required information about UNO modules in pyuno.
+hasModule(), getModuleElementNames() and importValue() methods have been
+introduced to get required information about UNO modules in pyuno.
 
 There is no changes on existing import such as: 
 
