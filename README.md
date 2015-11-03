@@ -96,7 +96,9 @@ You can connect to the office instance with it.
 2to3
 --------
 tools/pyuno3ext.py file contains helper function "Execute_2to3" to execute 
-2to3 tool which helps you to migrate your code into Python 3.
+2to3 tool which helps you to migrate your code into Python 3. 
+Copy pyuno3ext.py file into USER/Scripts/python directory and execute 
+"Execute_2to3" function through Tools - Macros - Macro Organizer - Python.
 
 You can choose a file or content of a directory to analyze on the dialog. 
 The result of the analysis will be shown in a Writer document. 
@@ -158,7 +160,6 @@ Additionally, you can import the following values:
 * singleton
 * enum
 * constants group
-
 
 New import hook allows you to import module defined in IDL as Python module. 
 For example, com.sun.star.beans module can be imported as follows:
