@@ -37,7 +37,6 @@ using com::sun::star::uno::TypeClass;
 using com::sun::star::uno::RuntimeException;
 using com::sun::star::uno::XComponentContext;
 using com::sun::star::lang::XMultiComponentFactory;
-using com::sun::star::lang::XSingleServiceFactory;
 using com::sun::star::script::XTypeConverter;
 using com::sun::star::script::XInvocation2;
 using com::sun::star::reflection::XParameter;
