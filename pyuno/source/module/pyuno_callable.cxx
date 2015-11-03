@@ -383,14 +383,12 @@ PyObject* PyUNO_service_constructor_call(PyObject* self, PyObject* args, PyObjec
             }
             return ret.getAcquired();
         }
-        else
+        
+        aArguments.realloc( nPassedLength );
+        Any * pArguments = aArguments.getArray();
+        for ( sal_Int32 n = 0; n < nPassedLength; ++n )
         {
-            aArguments.realloc( nPassedLength );
-            Any * pArguments = aArguments.getArray();
-            for ( sal_Int32 n = 0; n < nPassedLength; ++n )
-            {
-                pArguments[n] = runtime.pyObject2Any( PyTuple_GetItem( args, n ) );
-            }
+            pArguments[n] = runtime.pyObject2Any( PyTuple_GetItem( args, n ) );
         }
         Reference< XComponentContext > xContext = runtime.getImpl()->cargo->xContext;
         Reference< XMultiComponentFactory > xFactory = xContext->getServiceManager();
