@@ -122,8 +122,9 @@ Without components file, you will meet error while installing your Python compon
 because of the restriction of the extension manager.
 
 
-Differences between Original PyUNO for Python 2.X
+Changes
 -------
+All Python3 related changes influence to your code.
 
 ### Classes ###
 * uno.ByteSequence must be initialized with bytes, bytearray or 
