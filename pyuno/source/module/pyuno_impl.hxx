@@ -34,7 +34,7 @@
 #include <com/sun/star/script/XInvocationAdapterFactory2.hpp>
 
 #include <com/sun/star/reflection/XIdlReflection.hpp>
-
+#include <com/sun/star/reflection/XServiceConstructorDescription.hpp>
 #include <com/sun/star/container/XHierarchicalNameAccess.hpp>
 
 #include <com/sun/star/lang/XUnoTunnel.hpp>
@@ -163,10 +163,17 @@ PyRef PyUNO_callable_new (
     const rtl::OUString &methodName,
     ConversionMode mode = REJECT_UNO_ANY );
 
+PyRef PyUNO_service_constructor_new(
+    const rtl::OUString & serviceName, 
+    const rtl::OUString & constructorName, 
+    const com::sun::star::uno::Reference< com::sun::star::reflection::XServiceConstructorDescription > & xDesc );
+
 PyObject* PyUNO_Type_new (const char *typeName , com::sun::star::uno::TypeClass t , const Runtime &r );
 PyObject* PyUNO_Enum_new( const char *enumBase, const char *enumValue, const Runtime &r );
 PyObject* PyUNO_char_new (sal_Unicode c , const Runtime &r);
 PyObject *PyUNO_ByteSequence_new( const com::sun::star::uno::Sequence< sal_Int8 > &, const Runtime &r );
+PyObject *PyUNO_UNOSingleton_new( const char * singletonName, const Runtime & r );
+PyObject * PyUNO_UNOService_new( const char * serviceName, const com::sun::star::uno::Sequence< rtl::OUString > & aNames, const Runtime & r );
 
 PyObject *importToGlobal( PyObject *typeName, PyObject *dict, PyObject *targetName );
 

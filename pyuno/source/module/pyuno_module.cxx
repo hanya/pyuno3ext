@@ -46,6 +46,8 @@
 #include <com/sun/star/reflection/XConstantsTypeDescription.hpp>
 #include <com/sun/star/reflection/XModuleTypeDescription.hpp>
 #include <com/sun/star/reflection/XStructTypeDescription.hpp>
+#include <com/sun/star/reflection/XServiceTypeDescription2.hpp>
+#include <com/sun/star/reflection/XServiceConstructorDescription.hpp>
 #endif
 
 using osl::Module;
@@ -76,6 +78,8 @@ using com::sun::star::reflection::XConstantsTypeDescription;
 using com::sun::star::reflection::XConstantTypeDescription;
 using com::sun::star::reflection::XModuleTypeDescription;
 using com::sun::star::reflection::XStructTypeDescription;
+using com::sun::star::reflection::XServiceTypeDescription2;
+using com::sun::star::reflection::XServiceConstructorDescription;
 #endif
 
 using namespace pyuno;
@@ -503,27 +507,29 @@ static PyObject *hasModule( PyObject *, PyObject *args )
     try
     {
         char *name;
-        if (PyArg_ParseTuple (args, const_cast< char * >("s"), &name))
+        if ( !PyArg_ParseTuple(args, const_cast< char * >("s"), &name) )
         {
-            OUString typeName ( OUString::createFromAscii( name ) );
-            Runtime runtime;
-            if ( runtime.getImpl()->cargo->xTdMgr->hasByHierarchicalName(typeName) )
+            PyErr_SetString( PyExc_TypeError, "hasModule() takes a string" );
+            return 0;
+        }
+        Runtime runtime;
+        OUString typeName( OUString::createFromAscii( name ) );
+        if ( runtime.getImpl()->cargo->xTdMgr->hasByHierarchicalName(typeName) )
+        {
+            Any a = runtime.getImpl()->cargo->xTdMgr->getByHierarchicalName(typeName);
+            Reference< com::sun::star::reflection::XTypeDescription > xTypeDescription(a, UNO_QUERY);
+            if ( xTypeDescription.is() )
             {
-                Any a = runtime.getImpl()->cargo->xTdMgr->getByHierarchicalName(typeName);
-                Reference< com::sun::star::reflection::XTypeDescription > xTypeDescription(a, UNO_QUERY);
-                if ( xTypeDescription.is() )
-                {
-                    com::sun::star::uno::TypeClass typeClass = xTypeDescription->getTypeClass();
-                    ret = PyLong_FromLong( 
-                        typeClass == com::sun::star::uno::TypeClass_MODULE || 
-                        typeClass == com::sun::star::uno::TypeClass_CONSTANTS || 
-                        typeClass == com::sun::star::uno::TypeClass_ENUM );
-                }
+                com::sun::star::uno::TypeClass typeClass = xTypeDescription->getTypeClass();
+                ret = PyLong_FromLong( 
+                    typeClass == com::sun::star::uno::TypeClass_MODULE || 
+                    typeClass == com::sun::star::uno::TypeClass_CONSTANTS || 
+                    typeClass == com::sun::star::uno::TypeClass_ENUM );
             }
-            else
-            {
-                ret = PyLong_FromLong( 0 );
-            }
+        }
+        else
+        {
+            ret = PyLong_FromLong( 0 );
         }
     }
     catch( NoSuchElementException & e )
@@ -566,93 +572,96 @@ static PyObject *getModuleElementNames( PyObject *, PyObject *args )
     try
     {
         char *name;
-        if (PyArg_ParseTuple (args, const_cast< char * >("s"), &name))
+        if ( !PyArg_ParseTuple (args, const_cast< char * >("s"), &name) )
         {
-            PyRef ret;
-            OUString typeName ( OUString::createFromAscii( name ) );
-            Runtime runtime;
-            
-            Any a = runtime.getImpl()->cargo->xTdMgr->getByHierarchicalName(typeName);
-            Reference< XTypeDescription > xTypeDescription(a, UNO_QUERY);
-            if ( xTypeDescription.is() )
+            PyErr_SetString( PyExc_TypeError, "getModuleElementNames() takes a string" );
+            return 0;
+        }
+        PyRef ret;
+        Runtime runtime;
+        OUString typeName( OUString::createFromAscii( name ) );
+        
+        Any a = runtime.getImpl()->cargo->xTdMgr->getByHierarchicalName(typeName);
+        Reference< XTypeDescription > xTypeDescription(a, UNO_QUERY);
+        if ( xTypeDescription.is() )
+        {
+            com::sun::star::uno::TypeClass typeClass = xTypeDescription->getTypeClass();
+            if ( typeClass == com::sun::star::uno::TypeClass_MODULE )
             {
-                com::sun::star::uno::TypeClass typeClass = xTypeDescription->getTypeClass();
-                if ( typeClass == com::sun::star::uno::TypeClass_MODULE )
+                Reference< XModuleTypeDescription > xModuleTypeDescription(
+                        xTypeDescription, UNO_QUERY );
+                if ( xModuleTypeDescription.is() )
                 {
-                    Reference< XModuleTypeDescription > xModuleTypeDescription(
-                            xTypeDescription, UNO_QUERY );
-                    if ( xModuleTypeDescription.is() )
+                    Sequence< Reference< XTypeDescription > > aSubModules = 
+                            xModuleTypeDescription->getMembers();
+                    const Reference< XTypeDescription > *pSubModules =
+                            aSubModules.getConstArray();
+                    const sal_Int32 nSize = aSubModules.getLength();
+                    
+                    const sal_Int32 nLength = typeName.getLength() +1;
+                    Sequence< OUString > aNames(nSize);
+                    sal_Int32 nCount = 0;
+                    
+                    for ( sal_Int32 n = 0; n < nSize; ++n )
                     {
-                        Sequence< Reference< XTypeDescription > > aSubModules = 
-                                xModuleTypeDescription->getMembers();
-                        const Reference< XTypeDescription > *pSubModules =
-                                aSubModules.getConstArray();
-                        const sal_Int32 nSize = aSubModules.getLength();
+                        Reference< XTypeDescription > xSubType( pSubModules[n] );
+                        com::sun::star::uno::TypeClass subTypeClass = xSubType->getTypeClass();
                         
-                        const sal_Int32 nLength = typeName.getLength() +1;
-                        Sequence< OUString > aNames(nSize);
-                        sal_Int32 nCount = 0;
-                        
-                        for ( sal_Int32 n = 0; n < nSize; n++ )
+                        if ( subTypeClass == com::sun::star::uno::TypeClass_INTERFACE || 
+                             subTypeClass == com::sun::star::uno::TypeClass_EXCEPTION || 
+                             ( subTypeClass == com::sun::star::uno::TypeClass_STRUCT && 
+                               ! isPolymorphicStruct( xSubType ) ) || 
+                             subTypeClass == com::sun::star::uno::TypeClass_SERVICE || 
+                             subTypeClass == com::sun::star::uno::TypeClass_ENUM || 
+                             subTypeClass == com::sun::star::uno::TypeClass_CONSTANTS || 
+                             subTypeClass == com::sun::star::uno::TypeClass_MODULE || 
+                             subTypeClass == com::sun::star::uno::TypeClass_SINGLETON )
                         {
-                            Reference< XTypeDescription > xSubType( 
-                                    pSubModules[n] );
-                            com::sun::star::uno::TypeClass subTypeClass = xSubType->getTypeClass();
-                            
-                            if ( subTypeClass == com::sun::star::uno::TypeClass_MODULE || 
-                                 subTypeClass == com::sun::star::uno::TypeClass_INTERFACE || 
-                                 subTypeClass == com::sun::star::uno::TypeClass_EXCEPTION || 
-                                 ( subTypeClass == com::sun::star::uno::TypeClass_STRUCT && 
-                                   ! isPolymorphicStruct( xSubType ) ) ||
-                                 subTypeClass == com::sun::star::uno::TypeClass_ENUM || 
-                                 subTypeClass == com::sun::star::uno::TypeClass_CONSTANTS )
-                            {
-                                aNames[nCount] = xSubType->getName().copy( nLength );
-                                nCount++;
-                            }
+                            aNames[nCount] = xSubType->getName().copy( nLength );
+                            nCount++;
                         }
-                        aNames.realloc( nCount );
-                        ret = runtime.any2PyObject( makeAny( aNames ) );
                     }
-                }
-                else if ( typeClass == com::sun::star::uno::TypeClass_CONSTANTS )
-                {
-                    Reference< XConstantsTypeDescription > xConstantsTypeDescription( 
-                            xTypeDescription, UNO_QUERY );
-                    if ( xConstantsTypeDescription.is() )
-                    {
-                        Sequence< Reference< XConstantTypeDescription > > aConstants = 
-                                xConstantsTypeDescription->getConstants();
-                        const Reference< XConstantTypeDescription > *pConstants = 
-                                aConstants.getConstArray();
-                        const sal_Int32 nSize = aConstants.getLength();
-                        
-                        const sal_Int32 nLength = typeName.getLength() +1;
-                        Sequence< OUString > aNames(nSize);
-                        
-                        for ( sal_Int32 n = 0; n < nSize; n++ )
-                        {
-                            Reference< XConstantTypeDescription > xConstantTypeDesc( 
-                                   pConstants[n] );
-                            aNames[n] = xConstantTypeDesc->getName().copy( nLength );
-                        }
-                        ret = runtime.any2PyObject( makeAny( aNames ) );
-                    }
-                }
-                else if ( typeClass == com::sun::star::uno::TypeClass_ENUM )
-                {
-                    Reference< XEnumTypeDescription > xEnumTypeDescription(
-                            xTypeDescription, UNO_QUERY );
-                    if ( xEnumTypeDescription.is() )
-                        ret = runtime.any2PyObject( 
-                            makeAny( xEnumTypeDescription->getEnumNames() ) );
+                    aNames.realloc( nCount );
+                    ret = runtime.any2PyObject( makeAny( aNames ) );
                 }
             }
-            if ( ret.is() )
-                return ret.getAcquired();
-            else
-                return PyList_New( 0 );
+            else if ( typeClass == com::sun::star::uno::TypeClass_CONSTANTS )
+            {
+                Reference< XConstantsTypeDescription > xConstantsTypeDescription( 
+                        xTypeDescription, UNO_QUERY );
+                if ( xConstantsTypeDescription.is() )
+                {
+                    Sequence< Reference< XConstantTypeDescription > > aConstants( 
+                            xConstantsTypeDescription->getConstants() );
+                    const Reference< XConstantTypeDescription > *pConstants = 
+                            aConstants.getConstArray();
+                    const sal_Int32 nSize = aConstants.getLength();
+                    
+                    const sal_Int32 nLength = typeName.getLength() +1;
+                    Sequence< OUString > aNames(nSize);
+                    
+                    for ( sal_Int32 n = 0; n < nSize; ++n )
+                    {
+                        Reference< XConstantTypeDescription > xConstantTypeDesc( pConstants[n] );
+                        if ( xConstantTypeDesc.is() )
+                            aNames[n] = xConstantTypeDesc->getName().copy( nLength );
+                    }
+                    ret = runtime.any2PyObject( makeAny( aNames ) );
+                }
+            }
+            else if ( typeClass == com::sun::star::uno::TypeClass_ENUM )
+            {
+                Reference< XEnumTypeDescription > xEnumTypeDescription(
+                        xTypeDescription, UNO_QUERY );
+                if ( xEnumTypeDescription.is() )
+                    ret = runtime.any2PyObject( 
+                        makeAny( xEnumTypeDescription->getEnumNames() ) );
+            }
         }
+        if ( ret.is() )
+            return ret.getAcquired();
+        else
+            return PyList_New( 0 );
     }
     catch( NoSuchElementException & e )
     {
@@ -661,6 +670,179 @@ static PyObject *getModuleElementNames( PyObject *, PyObject *args )
     catch( com::sun::star::lang::IllegalArgumentException & e )
     {
         raisePyExceptionWithAny( makeAny( e ) );
+    }
+    catch( RuntimeException & e )
+    {
+        raisePyExceptionWithAny( makeAny( e ) );
+    }
+    return 0;
+}
+
+static PyObject *importValue( PyObject *, PyObject *args )
+{
+    char * path;
+    char * name;
+    if ( !PyArg_ParseTuple(args, const_cast< char * >("ss"), &path, &name) )
+    {
+        OStringBuffer buf;
+        buf.append( "both arguments have to string" );
+        PyErr_SetString( PyExc_ImportError, buf.getStr() );
+        return 0;
+    }
+    
+    const OUString aPath( OUString::createFromAscii( path ) );
+    const OUString aName( OUString::createFromAscii( name ) );
+    OUStringBuffer buf;
+    buf.append( aPath ).appendAscii( "." ).append( aName );
+    const OUString aFullName = buf.makeStringAndClear();
+    try
+    {
+        Runtime runtime;
+        
+        if ( runtime.getImpl()->cargo->xTdMgr->hasByHierarchicalName( aPath ) )
+        {
+            Any a = runtime.getImpl()->cargo->xTdMgr->getByHierarchicalName( aPath );
+            Reference< XTypeDescription > xTypeDescription(a, UNO_QUERY);
+            if ( xTypeDescription.is() )
+            {
+                switch ( xTypeDescription->getTypeClass() )
+                {
+                    case com::sun::star::uno::TypeClass_MODULE:
+                    {
+                        if ( runtime.getImpl()->cargo->xTdMgr->hasByHierarchicalName( aFullName ) )
+                        {
+                            Any a = runtime.getImpl()->cargo->xTdMgr->getByHierarchicalName( aFullName );
+                            Reference< XTypeDescription > xTypeDescription(a, UNO_QUERY);
+                            if ( xTypeDescription.is() )
+                            {
+                                com::sun::star::uno::TypeClass typeClass = xTypeDescription->getTypeClass();
+                                if ( typeClass == com::sun::star::uno::TypeClass_INTERFACE || 
+                                     typeClass == com::sun::star::uno::TypeClass_STRUCT || 
+                                     typeClass == com::sun::star::uno::TypeClass_EXCEPTION )
+                                {
+                                    PyRef ret = getClass( aFullName, runtime );
+                                    return ret.getAcquired();
+                                }
+                                else if ( typeClass == com::sun::star::uno::TypeClass_SERVICE )
+                                {
+                                    Reference< XServiceTypeDescription2 > xServiceDesc( xTypeDescription, UNO_QUERY );
+                                    if ( xServiceDesc.is() )
+                                    {
+                                        Sequence< Reference< XServiceConstructorDescription > > aDescs = xServiceDesc->getConstructors();
+                                        const sal_Int32 nLength = aDescs.getLength();
+                                        Sequence< OUString > aNames( 0 );
+                                        
+                                        if ( nLength > 0 )
+                                        {
+                                            aNames.realloc( nLength );
+                                            const Reference< XServiceConstructorDescription > * pDescs = aDescs.getConstArray();
+                                            for ( sal_Int32 n = 0; n < nLength; ++n )
+                                            {
+                                                aNames[n] = pDescs[n]->getName();
+                                            }
+                                        }
+                                        else
+                                        {
+                                            aNames.realloc( 1 );
+                                            aNames[0] = OUString( RTL_CONSTASCII_USTRINGPARAM( "create" ) );
+                                        }
+                                        OString o = OUStringToOString( aFullName, RTL_TEXTENCODING_ASCII_US );
+                                        PyRef ret = PyUNO_UNOService_new( o.getStr(), aNames, runtime );
+                                        return ret.getAcquired();
+                                    }
+                                }
+                                else if ( typeClass == com::sun::star::uno::TypeClass_SINGLETON )
+                                {
+                                    OString o = OUStringToOString( aFullName, RTL_TEXTENCODING_ASCII_US );
+                                    PyRef ret = PyUNO_UNOSingleton_new( o.getStr(), runtime );
+                                    return ret.getAcquired();
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    case com::sun::star::uno::TypeClass_CONSTANTS:
+                    {
+                        if ( runtime.getImpl()->cargo->xTdMgr->hasByHierarchicalName( aFullName ) )
+                        {
+                            Any desc = runtime.getImpl()->cargo->xTdMgr->getByHierarchicalName( aFullName );
+                            if ( desc.getValueTypeClass() != com::sun::star::uno::TypeClass_INTERFACE )
+                            {
+                                PyRef constant = runtime.any2PyObject( desc );
+                                return constant.getAcquired();
+                            }
+                        }
+                        break;
+                    }
+                    case com::sun::star::uno::TypeClass_ENUM:
+                    {
+                        Reference< XEnumTypeDescription > xEnumTypeDescription( xTypeDescription, UNO_QUERY );
+                        if ( xEnumTypeDescription.is() )
+                        {
+                            Sequence< OUString > aEnumNames = xEnumTypeDescription->getEnumNames();
+                            const OUString * pEnumNames = aEnumNames.getConstArray();
+                            const sal_Int32 nSize = aEnumNames.getLength();
+                            
+                            for ( sal_Int32 n = 0; n < nSize; ++n )
+                            {
+                                if ( aName.equals( pEnumNames[n] ) )
+                                {
+                                    OString m = OUStringToOString( aPath, RTL_TEXTENCODING_ASCII_US );
+                                    OString n = OUStringToOString( aName, RTL_TEXTENCODING_ASCII_US );
+                                    PyRef constant = PyUNO_Enum_new( m.getStr(), n.getStr(), runtime );
+                                    return constant.getAcquired();
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    case com::sun::star::uno::TypeClass_SERVICE:
+                    {
+                        Reference< XServiceTypeDescription2 > xServiceDesc( xTypeDescription, UNO_QUERY );
+                        if ( xServiceDesc.is() )
+                        {
+                            Reference< XServiceConstructorDescription > xConstructorDesc;
+                            Sequence< Reference< XServiceConstructorDescription > > aDescs = xServiceDesc->getConstructors();
+                            const Reference< XServiceConstructorDescription > * pDescs = aDescs.getConstArray();
+                            const sal_Int32 nLength = aDescs.getLength();
+                            for ( sal_Int32 n = 0; n < nLength; ++n )
+                            {
+                                if ( pDescs[n]->getName().equals( aName ) )
+                                {
+                                    xConstructorDesc = pDescs[n];
+                                    break;
+                                }
+                            }
+                            if ( nLength == 0 && !aName.equalsAscii( "create" ) || 
+                                 nLength > 0 && !xConstructorDesc.is() )
+                            {
+                                OUStringBuffer buf;
+                                buf.appendAscii( "constructor not found: " ).append( aPath )
+                                   .appendAscii( "::" ).append( aName );
+                                PyErr_SetString( PyExc_ImportError, 
+                                    OUStringToOString( buf.makeStringAndClear(), RTL_TEXTENCODING_UTF8 ).getStr() );
+                                return 0;
+                            }
+                            PyRef ret = PyUNO_service_constructor_new( 
+                                                    aPath, aName, xConstructorDesc );
+                            return ret.getAcquired();
+                        }
+                        break;
+                    }
+                    default:
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        PyErr_SetString( PyExc_ImportError,
+                     OUStringToOString( aFullName, RTL_TEXTENCODING_ASCII_US) );
+    }
+    catch( NoSuchElementException & e )
+    {
+        PyErr_SetString( PyExc_ImportError,
+                     OUStringToOString( aFullName, RTL_TEXTENCODING_ASCII_US) );
     }
     catch( RuntimeException & e )
     {
@@ -922,6 +1104,7 @@ struct PyMethodDef PyUNOModule_methods [] =
 #if PY_MAJOR_VERSION >= 3
     {const_cast< char * >("getModuleElementNames"), getModuleElementNames, METH_VARARGS, NULL},
     {const_cast< char * >("hasModule"), hasModule, METH_VARARGS, NULL},
+    {const_cast< char * >("importValue"), importValue, METH_VARARGS, NULL}, 
 #endif
     {NULL, NULL, 0, NULL}
 };

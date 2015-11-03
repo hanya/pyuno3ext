@@ -123,7 +123,7 @@ because of the restriction of the extension manager.
 Differences between Original PyUNO for Python 2.X
 -------
 
-### Classes
+### Classes ###
 * uno.ByteSequence must be initialized with bytes, bytearray or 
 ByteSequence instance.
 
@@ -134,21 +134,42 @@ PyUNO uses custom import function to import UNO values in uno.py.
 It has some problems when other module uses the same way. 
 Import hook is introduced by importlib module on Python 3.1. 
 We should be use to import UNO values.
-  
+
 hasModule() and getModuleElementNames() methods are introduced 
 to get required information about UNO modules in pyuno.
-See uno.py more detail.
-  
-New import hook allows to import module defined in IDL as Python module. 
+
+There is no changes on existing import such as: 
+
+    from com.sun.star.beans import PropertyValue
+
+You could import the following things of UNO in the former PyUNO: 
+
+* interface
+* struct
+* exception
+* enum value
+* constant value
+* type
+
+Additionally, you can import the following values:
+
+* module
+* service for constructor
+* singleton
+* enum
+* constants group
+
+
+New import hook allows you to import module defined in IDL as Python module. 
 For example, com.sun.star.beans module can be imported as follows:
- 
+
     import com.sun.star.beans
 
 and its sub elements can be accessed as its attribute.
 
     pv = com.sun.star.beans.PropertyValue()
 
-When enum or constants is requested, it can be imported as modules. 
+When enum or constants group is requested, it can be imported as modules. 
 And its value elements are accessible as module attributes. 
 
     import com.sun.star.awt.PosSize as PosSize
@@ -157,6 +178,33 @@ And its value elements are accessible as module attributes.
 These module attributes are not loaded at import time of the module. 
 But once a value is requested, it would be normal attribute of the module. 
 No more \__getattr\__ hook is not called to get the value.
+
+Constructors are defined on the some services which provides the way to 
+instantiate service without using com.sun.star.lang.XMultiComponentFactory. 
+And also it provides way to check parameters before to pass them to the 
+service to instantiate.
+
+    from com.sun.star.rdf import URI
+    uri = URI.create("foo")
+
+A service has no defined constructor has "create" method as its constructor. 
+No parameter check is provided in this case.
+
+    from com.sun.star.frame import Desktop
+    desktop = Desktop.create()
+
+It can take any number of parameters the create method if you need some 
+initialization parameters. This method is different from the constructor 
+defined in the their IDL.
+
+You can import only registerd services in the office registry. If you want 
+to instantiate your own service installed by your extension, the extension 
+have to contain the registry for own services.
+
+In the case of singletons, you can import it and get its instance as follows: 
+
+    from com.sun.star.deployment import PackageInformationProvider
+    pip = PackageInformationProvider.get()
 
 
 CHANGES

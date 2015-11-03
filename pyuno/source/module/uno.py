@@ -298,39 +298,76 @@ class _UNOModule(types.ModuleType):
         self.__package__ = ""
         self.__initializing__ = False
     
-    def __getattr__(self, elt):
-        value = None
-        _pyuno = pyuno
-        path = self.__path__
-        name = path + "." + elt
-        
-        RuntimeException = _pyuno.getClass("com.sun.star.uno.RuntimeException")
+    def __str__(self):
+        return "<UNOModule '" + self.__path__ + "'>"
+    
+    def __dir__(self):
         try:
-            value = _pyuno.getClass(name)
-        except RuntimeException:
-            try:
-                value = Enum(path, elt)
-            except RuntimeException:
+            if hasattr(self, "__all__"):
+                module_names = self.__all__
+            else:
+                module_names = pyuno.getModuleElementNames(self.__path__)
+                self.__all__ = list(module_names)
+        except:
+            module_names = []
+        return list(self.__class__.__dict__.keys()) + list(self.__dict__.keys()) + list(module_names)
+    
+    def __getattr__(self, name):
+        try:
+            value = pyuno.importValue(self.__path__, name)
+        except:
+            if name == "__all__":
                 try:
-                    value = _pyuno.getConstantByName(name)
-                except RuntimeException:
-                    if elt.startswith("typeOf"):
-                        try:
-                            value = _pyuno.getTypeByName(path + "." + elt[6:])
-                        except RuntimeException:
-                            raise AttributeError(
-                                "type {}.{} is unknown".format(path, elt))
-                    elif elt == "__all__":
-                        try:
-                            module_names = _pyuno.getModuleElementNames(path)
-                            self.__all__ = module_names
-                            return module_names
-                        except RuntimeException:
-                            raise AttributeError("__all__")
-                    else:
-                        raise AttributeError(
-                            "type {}.{} is unknown".format(path, elt))
-        setattr(self, elt, value)
+                    module_names = pyuno.getModuleElementNames(self.__path__)
+                    self.__all__ = module_names
+                    return module_names
+                except:
+                    raise AttributeError("__all__")
+            elif name.startswith("typeOf"):
+                try:
+                    value = pyuno.getTypeByName(self.__path__ + "." + name[6:])
+                except:
+                    raise AttributeError(
+                            "type {}.{} is unknown".format(self.__path__, name))
+            else:
+                raise AttributeError(name)
+        setattr(self, name, value)
+        return value
+
+
+class _UNOSingleton:
+    """ Singleton getter. """
+    
+    def __init__(self, name):
+        self.name = "/singletons/" + name
+    
+    def __str__(self):
+        return "<UNOSingleton '" + self.name + "'>"
+    
+    def get(self):
+        """ Getter method for this singleton """
+        return pyuno.getComponentContext().getValueByName(self.name)
+
+
+class _UNOService:
+    """ Keeps constructors of specific service. """
+    
+    def __init__(self, fullname, names):
+        self.__path__ = fullname
+        self.__constructors__ = names
+    
+    def __str__(self):
+        return "<UNOService '" + self.__path__ + "'>"
+    
+    def __dir__(self):
+        return list(self.__class__.__dict__.keys()) + list(self.__dict__.keys()) + list(self.__constructors__)
+    
+    def __getattr__(self, name):
+        try:
+            value = pyuno.importValue(self.__path__, name)
+        except:
+            raise AttributeError("constructor not found: {}.{}".format(self.__path__, name))
+        setattr(self, name, value)
         return value
 
 

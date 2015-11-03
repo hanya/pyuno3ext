@@ -7,5 +7,8 @@ Changes are summarized below:
 * mailmerge: pass bytearray from bytesequence of attachments
 * mailmerge: use SMTP_SSL when SSL type is choosen
 * pyuno: replace import hack with import hook
+* pyuno: supports UNO module import
+* pyuno: singleton getter support
+* pyuno: service constructor support
 * pythonscript: without imp module to instantiate new module
 * python.sh: embedded in tools/pyuno3ext.py file and change environmental variables

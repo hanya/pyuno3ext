@@ -455,4 +455,24 @@ PyObject *PyUNO_ByteSequence_new(
     return callCtor( r, "ByteSequence" , args );
     
 }
+
+PyObject * PyUNO_UNOSingleton_new( const char * singletonName, const Runtime & r )
+{
+    PyRef args( PyTuple_New( 1 ), SAL_NO_ACQUIRE );
+    
+    PyTuple_SetItem( args.get(), 0, PYSTR_FROMSTR( singletonName ) );
+    return callCtor( r, "_UNOSingleton", args );
+}
+
+PyObject * PyUNO_UNOService_new( const char * serviceName, 
+    const com::sun::star::uno::Sequence< OUString > & aNames, const Runtime & r )
+{
+    PyRef args( PyTuple_New( 2 ), SAL_NO_ACQUIRE );
+    
+    PyTuple_SetItem( args.get(), 0, PYSTR_FROMSTR( serviceName ) );
+    Any a = makeAny( aNames );
+    PyTuple_SetItem( args.get(), 1, r.any2PyObject( a ).getAcquired() );
+    return callCtor( r, "_UNOService", args );
+}
+
 }
