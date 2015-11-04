@@ -480,11 +480,6 @@ PyObject* PyUNO_getattr (PyObject* self, char* name)
         }
 #endif
 
-        if (strcmp (name, "__dict__") == 0)
-        {
-            Py_INCREF (Py_None);
-            return Py_None;
-        }
 #if PY_MAJOR_VERSION < 3
         if (strcmp (name, "__methods__") == 0)
         {
@@ -492,19 +487,6 @@ PyObject* PyUNO_getattr (PyObject* self, char* name)
             return Py_None;
         }
 #endif
-        if (strcmp (name, "__class__") == 0)
-        {
-            if( me->members->wrappedObject.getValueTypeClass() ==
-                com::sun::star::uno::TypeClass_STRUCT ||
-                me->members->wrappedObject.getValueTypeClass() ==
-                com::sun::star::uno::TypeClass_EXCEPTION )
-            {
-                return getClass(
-                    me->members->wrappedObject.getValueType().getTypeName(), runtime ).getAcquired();
-            }
-            Py_INCREF (Py_None);
-            return Py_None;
-        }
 
         OUString attrName( OUString::createFromAscii( name ) );
         //We need to find out if it's a method...
@@ -533,6 +515,25 @@ PyObject* PyUNO_getattr (PyObject* self, char* name)
             return ret.get();
         }
 
+        if (strcmp (name, "__class__") == 0)
+        {
+            if( me->members->wrappedObject.getValueTypeClass() ==
+                com::sun::star::uno::TypeClass_STRUCT ||
+                me->members->wrappedObject.getValueTypeClass() ==
+                com::sun::star::uno::TypeClass_EXCEPTION )
+            {
+                return getClass(
+                    me->members->wrappedObject.getValueType().getTypeName(), runtime ).getAcquired();
+            }
+            Py_INCREF (Py_None);
+            return Py_None;
+        }
+        if (strcmp (name, "__dict__") == 0)
+        {
+            Py_INCREF (Py_None);
+            return Py_None;
+        }
+        
         //or else...
         PyErr_SetString (PyExc_AttributeError, name);
     }
