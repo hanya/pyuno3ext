@@ -458,7 +458,6 @@ PyObject* PyUNO_getattr (PyObject* self, char* name)
 #endif
     try
     {
-
         Runtime runtime;
     
         me = (PyUNO*) self;
@@ -478,9 +477,7 @@ PyObject* PyUNO_getattr (PyObject* self, char* name)
             }
             return member_list;
         }
-#endif
 
-#if PY_MAJOR_VERSION < 3
         if (strcmp (name, "__methods__") == 0)
         {
             Py_INCREF (Py_None);
