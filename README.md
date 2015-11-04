@@ -157,7 +157,7 @@ You could import the following things of UNO in the former PyUNO:
 Additionally, you can import the following values:
 
 * module
-* service for constructor
+* service
 * singleton
 * enum
 * constants group
