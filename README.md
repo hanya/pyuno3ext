@@ -129,6 +129,7 @@ All Python3 related changes influence to your code.
 ### Classes ###
 * uno.ByteSequence must be initialized with bytes, bytearray or 
 ByteSequence instance.
+* No __members__ and __methods__ on pyuno instance. Use dir().
 
 
 ### Replaced import hook ###
