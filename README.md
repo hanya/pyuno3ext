@@ -45,7 +45,7 @@ And then install Python3Script-VERSION.oxt later. Restart your office.
 
 How to Use
 --------
-If you do no have write permission to program/unorc or uno.ini file, 
+If you do not have write permission to program/unorc or uno.ini file, 
 you can not use this extension.
 This extension conflict with original Python. So you have to disable 
 the original implementations. There are two ways to do.
