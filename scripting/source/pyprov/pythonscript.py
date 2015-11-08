@@ -228,12 +228,6 @@ def hasChanged(oldDate, newDate):
            newDate.Seconds > oldDate.Seconds or \
            newDate.HundredthSeconds > oldDate.HundredthSeconds
 
-def ensureSourceState(code):
-    if not code.endswith(b"\n"):
-        code += b"\n"
-    code = code.replace(b"\r", b"")
-    return code
-
 
 def checkForPythonPathBesideScript(url):
     if url.startswith("file:"):
@@ -341,7 +335,6 @@ class ProviderContext:
     def getFuncsByUrl(self, url):
         src = readTextFromStream(self.sfa.openFileRead(url))
         checkForPythonPathBesideScript(url[0:url.rfind('/')])
-        src = ensureSourceState(src)
 
         allFuncs = []
         g_exportedScripts = []
@@ -389,7 +382,6 @@ class ProviderContext:
             log.debug("opening >{}<", url)
 
             src = readTextFromStream(self.sfa.openFileRead(url))
-            src = ensureSourceState(src)
             checkForPythonPathBesideScript(url[0:url.rfind('/')])
 
             # execute the module

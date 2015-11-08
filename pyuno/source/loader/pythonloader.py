@@ -92,9 +92,7 @@ class Loader(XImplementationLoader, XServiceInfo, unohelper.Base):
                     # read the file
                     filename = unohelper.fileUrlToSystemPath(url)
                     with open(filename) as f:
-                        src = f.read().replace("\r", "")
-                    if not src.endswith("\n"):
-                        src += "\n"
+                        src = f.read()
 
                     # compile and execute the module
                     codeobject = compile(src, encfile(filename), "exec")
