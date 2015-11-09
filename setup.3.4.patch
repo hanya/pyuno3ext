@@ -112,4 +112,3 @@
                                         libraries = ['ssl', 'crypto']) )
              else:
                  print("warning: openssl 0x%08x is too old for _hashlib" %
-flag

@@ -217,7 +217,6 @@ $(PYTHON_ARCHIVE_NAME) :
 $(PYTHON_NAME) : $(PYTHON_ARCHIVE_NAME)
 	$(TAR_CMD) $(PYTHON_ARCHIVE_NAME)
 	cd $(PYTHON_NAME) && $(PATCH_CMD) -p0 < ../$(PYTHON_SETUP_PATCH)
-	@echo flag >> $(PYTHON_SETUP_PATCH)
 	export LD_LIBRARY_PATH=$(DEFAULT_LD_LIBRARY_PATH) && cd $(PYTHON_NAME) && ./configure --enable-shared --prefix=$(CURDIR)/build${PY_SHORT_VERSION}/loader && make
 
 
