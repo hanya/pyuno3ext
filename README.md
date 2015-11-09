@@ -37,6 +37,10 @@ Requires libboost-dev to build on Linux environment.
 
 PC_NAME should be name of your computer.
 
+If you want to build for different Python version, you can choose as follows: 
+
+    make PY_MAJOR=3 PY_MINOR=4 PY_BUGFX=3
+
 After that you can find the following files in the build/ directory.
 * PythonVERSIONLoader-VERSION-PLATFORM.oxt
 * PythonScript-VERSION.oxt
