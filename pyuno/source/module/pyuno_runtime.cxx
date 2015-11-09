@@ -773,13 +773,11 @@ Any Runtime::pyObject2Any ( const PyRef & source, enum ConversionMode mode ) con
                 seq = Sequence<sal_Int8 > (
                     (sal_Int8*) PyBytes_AsString(str.get()), PyBytes_Size(str.get()));
             }
-#if PY_MAJOR_VERSION >= 3
             else if ( PyByteArray_Check( str.get() ) )
             {
                 seq = Sequence< sal_Int8 >(
                     (sal_Int8 *) PyByteArray_AS_STRING(str.get()), PyByteArray_GET_SIZE(str.get()));
             }
-#endif
             a <<= seq;                                                          
         }
         else

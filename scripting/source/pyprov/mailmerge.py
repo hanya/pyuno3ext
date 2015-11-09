@@ -40,13 +40,22 @@ from com.sun.star.lang import IllegalArgumentException
 from com.sun.star.lang import EventObject
 from com.sun.star.mail import SendMailMessageFailedException
 
-from email.mime.base import MIMEBase
-from email.message import Message
-import email.encoders as Encoders
-from email.header import Header
-from email.mime.multipart import MIMEMultipart
-from email.utils import formatdate
-from email.utils import parseaddr
+try:
+    from email.MIMEBase import MIMEBase
+    from email.Message import Message
+    from email import Encoders
+    from email.Header import Header
+    from email.MIMEMultipart import MIMEMultipart
+    from email.Utils import formatdate
+    from email.Utils import parseaddr
+except:
+    from email.mime.base import MIMEBase
+    from email.message import Message
+    import email.encoders as Encoders
+    from email.header import Header
+    from email.mime.multipart import MIMEMultipart
+    from email.utils import formatdate
+    from email.utils import parseaddr
 
 from socket import _GLOBAL_DEFAULT_TIMEOUT
 
@@ -231,7 +240,7 @@ class PyMailSMTPService(unohelper.Base, XSmtpService):
             maintype, subtype = ctype.split('/', 1)
             msgattachment = MIMEBase(maintype, subtype)
             data = content.getTransferData(flavor)
-            msgattachment.set_payload(data)
+            msgattachment.set_payload(data.value)
             Encoders.encode_base64(msgattachment)
             fname = attachment.ReadableName
             try:

@@ -22,7 +22,6 @@ import sys
 
 import pyuno
 import socket # since on Windows sal3.dll no longer calls WSAStartup
-import importlib.abc
 import types
 import traceback
 
@@ -291,7 +290,7 @@ class _UNOModule(types.ModuleType):
     """
     
     def __init__(self, fullname, loader):
-        super().__init__(fullname)
+        types.ModuleType.__init__(self, fullname)
         self.__file__ = "<" + fullname + ">"
         self.__loader__ = loader
         self.__path__ = fullname
@@ -316,13 +315,15 @@ class _UNOModule(types.ModuleType):
         try:
             value = pyuno.importValue(self.__path__, name)
         except:
-            if name == "__all__":
+            if pyuno.hasModule(self.__path__ + "." + name):
+                value = _UNOModuleLoader().load_module(self.__path__ + "." + name)
+            elif name == "__all__" or name == "*":
                 try:
                     module_names = pyuno.getModuleElementNames(self.__path__)
                     self.__all__ = module_names
                     return module_names
                 except:
-                    raise AttributeError("__all__")
+                    raise AttributeError(name)
             elif name.startswith("typeOf"):
                 try:
                     value = pyuno.getTypeByName(self.__path__ + "." + name[6:])
@@ -371,7 +372,17 @@ class _UNOService:
         return value
 
 
-class _UNOModuleLoader(importlib.abc.Loader):
+if sys.version_info.major == 2:
+    class Loader:
+        pass
+    
+    class Finder:
+        pass
+else:
+    from importlib.abc import Loader, Finder
+
+
+class _UNOModuleLoader(Loader):
     """ UNO module loader. 
     
         Creates new customized module for UNO if not yet loaded.
@@ -387,7 +398,7 @@ class _UNOModuleLoader(importlib.abc.Loader):
         return mod
 
 
-class _UNOModuleFinder(importlib.abc.Finder):
+class _UNOModuleFinder(Finder):
     """ UNO module finder. 
     
         Generate module loader for UNO module. Valid module names are 
@@ -402,4 +413,46 @@ class _UNOModuleFinder(importlib.abc.Finder):
         return None
 
 
-sys.meta_path.append(_UNOModuleFinder())
+if sys.version_info.major == 2:
+    import __builtin__ as builtins
+    _g_delegatee = builtins.__dict__["__import__"]
+    _module_finder = _UNOModuleFinder()
+    
+    def _uno_import(name, *optargs, **kwargs):
+        try:
+            return _g_delegatee( name, *optargs, **kwargs )
+        except ImportError:
+            globals, locals, fromlist = (list(optargs)[:3] + 
+                [kwargs.get('globals',{}), kwargs.get('locals',{}), kwargs.get('fromlist',[])][len(optargs):])
+            if not fromlist:
+                raise
+        
+        try:
+            mod = sys.modules[name]
+        except:
+            mod = None
+            mod_names = name.split(".")
+            mod_name = mod_names[0]
+            try:
+                loader = _module_finder.find_module(mod_name)
+                if loader is None:
+                    raise ImportError(mod_name)
+            except:
+                raise ImportError(mod_name)
+            else:
+                mod = loader.load_module(mod_name)
+            try:
+                for mod_name in mod_names[1:]:
+                    mod = getattr(mod, mod_name)
+            except:
+                raise ImportError(name)
+        try:
+            for sub_name in fromlist:
+                getattr(mod, sub_name)
+        except AttributeError as e:
+            raise ImportError(str(e))
+        return mod
+    
+    builtins.__dict__["__import__"] = _uno_import
+else:
+    sys.meta_path.append(_UNOModuleFinder())

@@ -15,7 +15,7 @@ LOADER_EXT_VERSION=0.1.0
 LOADER_EXT_STATE=
 
 # Scripting definitions
-SCRIPTING_EXT_NAME=Python3Script
+SCRIPTING_EXT_NAME=PythonScript
 SCRIPTING_EXT_VERSION=0.1.0
 SCRIPTING_EXT_STATE=
 
@@ -32,6 +32,13 @@ include $(SETTINGS)/platform.mk
 
 LOADER_EXT_PKG_NAME=$(LOADER_EXT_NAME)-$(LOADER_EXT_VERSION)$(LOADER_EXT_STATE)-$(subst _,-,$(EXTENSION_PLATFORM)).$(UNOOXT_EXT)
 SCRIPTING_EXT_PKG_NAME=$(SCRIPTING_EXT_NAME)-$(SCRIPTING_EXT_VERSION)$(SCRIPTING_EXT_STATE).$(UNOOXT_EXT)
+
+
+ifeq "$(PY_MAJOR)" "3"
+	LIB_SUFFIX=m
+else
+	LIB_SUFFIX=
+endif
 
 
 ifeq "$(OS)" "WIN"
@@ -58,7 +65,7 @@ else
 	ORIGIN_NAME=%origin%
 	CC_FLAGS=-c -O2 -fpic
 	LINK_OUT_FLAG=-o 
-	PYTHON_LIB=-lpython$(PY_MAJOR).$(PY_MINOR)m
+	PYTHON_LIB=-lpython$(PY_MAJOR).$(PY_MINOR)$(LIB_SUFFIX)
 	PYUNO_LIB=-lpyuno
 	LINK_LIB_SWITCH=-L
 	MODULE_PYUNO_LINK=-ldl
@@ -80,7 +87,7 @@ MODULE_LINK_FLAGS=$(LIBRARY_LINK_FLAGS)
 PYTHON_EXEC_NAME=python$(EXE_EXT)
 
 
-BUILD_DIR=./build
+BUILD_DIR=./build$(PY_SHORT_VERSION)
 LOADER_BUILD_DIR=$(BUILD_DIR)/loader
 LOADER_BUILD_LIB_DIR=$(LOADER_BUILD_DIR)/lib
 SCRIPTING_BUILD_DIR=$(BUILD_DIR)/scripting
@@ -100,7 +107,8 @@ PYUNO_MODULE_NAME=pyuno.$(SHAREDLIB_EXT)
 LIB_PYUNO_NAME=$(SHAREDLIB_PRE)pyuno.$(SHAREDLIB_EXT)
 
 MODULE_DIR=./pyuno/source/module
-MODULE_CXX_FILES=pyuno.cxx pyuno_adapter.cxx pyuno_callable.cxx pyuno_except.cxx pyuno_gc.cxx pyuno_module.cxx pyuno_runtime.cxx pyuno_type.cxx pyuno_util.cxx
+MODULE_CXX_FILES=pyuno.cxx pyuno_adapter.cxx pyuno_callable.cxx pyuno_except.cxx \
+                 pyuno_gc.cxx pyuno_module.cxx pyuno_runtime.cxx pyuno_type.cxx pyuno_util.cxx
 MODULE_C_FILES=pyuno_dlopenwrapper.c
 MODULE_OUT_SLO=$(LOADER_BUILD_DIR)/slo
 LIB_PYUNO_OBJ_FILES=$(patsubst %.cxx,$(MODULE_OUT_SLO)/%.$(OBJ_EXT),$(MODULE_CXX_FILES))
@@ -145,8 +153,7 @@ SCRIPTING_MANIFEST=./scripting/manifest.xml
 SCRIPTING_PY=$(SCRIPTING_BUILD_DIR)/pythonscript.py
 SCRIPTING_MAILMERGE_PY=$(SCRIPTING_BUILD_DIR)/mailmerge.py
 
-
-PYTHON_INC=$(LOADER_BUILD_DIR)/include/python$(PY_MAJOR).$(PY_MINOR)m
+PYTHON_INC=$(LOADER_BUILD_DIR)/include/python$(PY_MAJOR).$(PY_MINOR)$(LIB_SUFFIX)
 PYUNO_INC=$(PYUNO_DIR)/inc
 IDL_INC=./inc
 
@@ -211,7 +218,7 @@ $(PYTHON_NAME) : $(PYTHON_ARCHIVE_NAME)
 	$(TAR_CMD) $(PYTHON_ARCHIVE_NAME)
 	cd $(PYTHON_NAME) && $(PATCH_CMD) -p0 < ../$(PYTHON_SETUP_PATCH)
 	@echo flag >> $(PYTHON_SETUP_PATCH)
-	export LD_LIBRARY_PATH=$(DEFAULT_LD_LIBRARY_PATH) && cd $(PYTHON_NAME) && ./configure --enable-shared --prefix=$(CURDIR)/build/loader && make
+	export LD_LIBRARY_PATH=$(DEFAULT_LD_LIBRARY_PATH) && cd $(PYTHON_NAME) && ./configure --enable-shared --prefix=$(CURDIR)/build${PY_SHORT_VERSION}/loader && make
 
 
 $(PYTHON_NAME)/$(PYTHON_EXEC_NAME) : $(OPENSSL_NAME)/libssl.a $(PYTHON_NAME)
@@ -234,8 +241,8 @@ $(LOADER_BUILD_DIR)/$(LICENSE_NAME) : $(LICENSE_NAME)
 $(LOADER_BUILD_DIR)/$(CHANGES_NAME) : $(CHANGES_NAME)
 	$(COPY) $(CHANGES_NAME) $(LOADER_BUILD_DIR)
 
-$(LOADER_BUILD_DIR)/$(DESCRIPTION_XML_NAME) : $(PYUNO_DIR)/$(DESCRIPTION_XML_NAME)
-	$(COPY) $(PYUNO_DIR)/$(DESCRIPTION_XML_NAME) $(LOADER_BUILD_DIR)
+$(LOADER_BUILD_DIR)/$(DESCRIPTION_XML_NAME) : $(PYUNO_DIR)/description$(PY_MAJOR).xml
+	$(COPY) $(PYUNO_DIR)/description$(PY_MAJOR).xml $(LOADER_BUILD_DIR)/$(DESCRIPTION_XML_NAME)
 
 
 $(LOADER_EXT_PKG) : $(BUILD_PYTHON_LIB) $(LOADER_BUILD_LIB_DIR) $(LOADER_MANIFEST) $(LOADER_REGISTRATION_COMPONENTS) \

@@ -424,7 +424,7 @@ class ScriptBrowseNode(BrowseNodeBase, XPropertySet, XInvocation):
     NODE_TYPE = SCRIPT
     
     def __init__(self, provCtx, uri, fileName, name):
-        super().__init__(provCtx, uri, name)
+        BrowseNodeBase.__init__(self, provCtx, uri, name)
         self.fileName = fileName
     
     def getPropertyValue(self, name):
@@ -469,7 +469,7 @@ class ScriptBrowseNode(BrowseNodeBase, XPropertySet, XInvocation):
 
 class FileBrowseNode(BrowseNodeBase):
     def __init__(self, provCtx, uri, name):
-        super().__init__(provCtx, uri, name)
+        BrowseNodeBase.__init__(self, provCtx, uri, name)
         self.func_names = None
     
     def getChildNodes(self):
@@ -494,7 +494,7 @@ class FileBrowseNode(BrowseNodeBase):
 
 class DirBrowseNode(BrowseNodeBase):
     def __init__(self, provCtx, uri, name):
-        super().__init__(provCtx, uri, name)
+        BrowseNodeBase.__init__(self, provCtx, uri, name)
 
     def getChildNodes(self):
         try:
@@ -666,7 +666,7 @@ def lastElement(url):
 
 class PackageBrowseNode(BrowseNodeBase):
     def __init__(self, provCtx, uri, name):
-        super().__init__(provCtx, uri, name)
+        BrowseNodeBase.__init__(self, provCtx, uri, name)
     
     def getChildNodes(self):
         browseNodeList = []
@@ -727,14 +727,14 @@ def expandUri(uri):
 
 class PythonScriptProvider(BrowseNodeBase, XScriptProvider, XNameContainer):
     def __init__(self, ctx, *args):
-        super().__init__(None, "", LANGUAGENAME)
+        BrowseNodeBase.__init__(self, None, "", LANGUAGENAME)
         if log.isDebugLevel():
             log.debug("Entering PythonScriptProvider.ctor {}", ", ".join(map(str, args)))
 
         doc = inv = None
         storageType = ""
 
-        if isinstance(args[0], str):
+        if isinstance(args[0], (str, unicode)):
             storageType = args[0]
             if storageType.startswith("vnd.sun.star.tdoc"):
                 doc = getModelFromDocUrl(ctx, storageType)

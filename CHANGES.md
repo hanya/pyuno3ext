@@ -10,5 +10,7 @@ Changes are summarized below:
 * pyuno: supports UNO module import
 * pyuno: singleton getter support
 * pyuno: service constructor support
+* pyuno: order of checking attribute name changed in PyUNO_getter
+* pyuno: UNO value import based on part of import hook
 * pythonscript: without imp module to instantiate new module
 * python.sh: embedded in tools/pyuno3ext.py file and change environmental variables

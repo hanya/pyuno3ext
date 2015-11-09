@@ -1,4 +1,6 @@
-build/
+build*/
 misc/
 Python-*
 openssl-*
+inc/
+pyuno/zipcore

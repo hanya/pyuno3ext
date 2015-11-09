@@ -1,8 +1,9 @@
 
-PyUNO Extension for Python 3.X
+PyUNO Extension for Python 2.7 and 3.X
 ===========
 
-This provides PyUNO built with Python 3.X for Apache OpenOffice 4.X. 
+This provides PyUNO as extension packages built with Python both 2.7 and 3.X 
+for Apache OpenOffice 4.X. 
 The code is based on Apache OpenOffice revision 1591060.
 
 
@@ -17,6 +18,7 @@ Restrictions
 * You need write permission to program/unorc or uno.ini file to disable original Python.
 * This extension can not coexist with the default Python.
 * ToDo: Python 3.3 might not work well.
+* For Python 2.7, import hook based on importlib is not supported.
 
 
 How to Build
@@ -36,11 +38,15 @@ Requires libboost-dev to build on Linux environment.
 PC_NAME should be name of your computer.
 
 After that you can find the following files in the build/ directory.
-* Python3Loader-VERSION-PLATFORM.oxt
-* Python3Script-VERSION.oxt
+* PythonVERSIONLoader-VERSION-PLATFORM.oxt
+* PythonScript-VERSION.oxt
 
-Install Python3Loader-VERSION-PLATFORM.oxt package first through the Extension Manager. 
-And then install Python3Script-VERSION.oxt later. Restart your office. 
+Install PythonVERSIONLoader-VERSION-PLATFORM.oxt package first 
+through the Extension Manager. 
+And then install Python3Script-VERSION.oxt later. After that restart your office. 
+
+PythonScript package also contains mailmerge.py file which implements 
+mailing service used by the mailmerge function.
 
 
 How to Use
@@ -84,6 +90,21 @@ Then restart your office.
 You can check the current state with "Show_Information" function.
 
 
+Switching Version
+--------
+You can install both Python 2.7 and 3.X extension packages but you can not 
+enable both at the same time. You have to use the following procedure to 
+switch between them.
+
+1. Choose Tools - Extension Manager in the main menu.
+2. Disable enabled one.
+3. Enable another one that you want to use.
+4. Restart your office.
+
+PythonScript-VERSION.oxt package can be used on the both version. 
+You do not need to change its state.
+
+
 For Interprocess Communication
 --------
 If you want to use the Python from the extension package, execute 
@@ -91,6 +112,8 @@ If you want to use the Python from the extension package, execute
 It generates helper shell script to execute python executable, 
 which has the same function with the original python shipped with the office. 
 You can connect to the office instance with it.
+
+Please use "Create_Python2_sh" for Python 2.7 alternatively.
 
 
 2to3
@@ -114,22 +137,18 @@ is the same location with the original Python scripts.
 
 Python Components
 --------
-The name of the component loader is "com.sun.star.loader.Python". 
-You have to choose the way to register with *.components file to register your components 
-written in Python 3. You can see the example in scripting/pythonscript.components and 
-scripting/manifest.xml files.
-Without components file, you will meet error while installing your Python component 
-because of the restriction of the extension manager.
+The name of the component loader is the same with the original for 
+compatibility reason, use "com.sun.star.loader.Python". 
 
 
 Changes
 -------
-All Python3 related changes influence to your code.
+All Python 3 related changes influence to your code.
 
 ### Classes ###
 * uno.ByteSequence must be initialized with bytes, bytearray or 
 ByteSequence instance.
-* No __members__ and __methods__ on pyuno instance. Use dir().
+* No __members__ and __methods__ on pyuno instance on Python3. Use dir().
 
 
 ### Replaced import hook ###
@@ -137,7 +156,11 @@ ByteSequence instance.
 PyUNO uses custom import function to import UNO values in uno.py. 
 It has some problems when other module uses the same way. 
 Import hook is introduced by importlib module on Python 3.1. 
-We should use it to import UNO values.
+We should use it to import UNO values. 
+
+On Python 2.7 extension, importlib is not used because of limited support 
+of the module. It still uses import hack but it supports module import 
+and other new importable values.
 
 hasModule(), getModuleElementNames() and importValue() methods have been
 introduced to get required information about UNO modules in pyuno.
@@ -177,7 +200,7 @@ And its value elements are accessible as module attributes.
 
     import com.sun.star.awt.PosSize as PosSize
     print(PosSize.POS)
-  
+
 These module attributes are not loaded at import time of the module. 
 But once a value is requested, it would be normal attribute of the module. 
 No more \__getattr\__ hook is not called to get the value.

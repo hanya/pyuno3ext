@@ -40,7 +40,6 @@
 #include <com/sun/star/reflection/XIdlReflection.hpp>
 #include <com/sun/star/reflection/XIdlClass.hpp>
 #include <com/sun/star/registry/InvalidRegistryException.hpp>
-#if PY_VERSION_HEX > 0x03010000
 #include <com/sun/star/reflection/XTypeDescription.hpp>
 #include <com/sun/star/reflection/XEnumTypeDescription.hpp>
 #include <com/sun/star/reflection/XConstantsTypeDescription.hpp>
@@ -48,7 +47,6 @@
 #include <com/sun/star/reflection/XStructTypeDescription.hpp>
 #include <com/sun/star/reflection/XServiceTypeDescription2.hpp>
 #include <com/sun/star/reflection/XServiceConstructorDescription.hpp>
-#endif
 
 using osl::Module;
 
@@ -71,7 +69,6 @@ using com::sun::star::container::NoSuchElementException;
 using com::sun::star::reflection::XIdlReflection;
 using com::sun::star::reflection::XIdlClass;
 using com::sun::star::script::XInvocation2;
-#if PY_VERSION_HEX > 0x03010000
 using com::sun::star::reflection::XTypeDescription;
 using com::sun::star::reflection::XEnumTypeDescription;
 using com::sun::star::reflection::XConstantsTypeDescription;
@@ -80,7 +77,6 @@ using com::sun::star::reflection::XModuleTypeDescription;
 using com::sun::star::reflection::XStructTypeDescription;
 using com::sun::star::reflection::XServiceTypeDescription2;
 using com::sun::star::reflection::XServiceConstructorDescription;
-#endif
 
 using namespace pyuno;
 
@@ -500,7 +496,7 @@ static PyObject *getClass( PyObject *, PyObject *args )
     return NULL;
 }
 
-#if PY_MAJOR_VERSION >= 3
+
 static PyObject *hasModule( PyObject *, PyObject *args )
 {
     PyObject *ret = 0;
@@ -521,16 +517,13 @@ static PyObject *hasModule( PyObject *, PyObject *args )
             if ( xTypeDescription.is() )
             {
                 com::sun::star::uno::TypeClass typeClass = xTypeDescription->getTypeClass();
-                ret = PyLong_FromLong( 
+                return PyLong_FromLong( 
                     typeClass == com::sun::star::uno::TypeClass_MODULE || 
                     typeClass == com::sun::star::uno::TypeClass_CONSTANTS || 
                     typeClass == com::sun::star::uno::TypeClass_ENUM );
             }
         }
-        else
-        {
-            ret = PyLong_FromLong( 0 );
-        }
+        ret = PyLong_FromLong( 0 );
     }
     catch( NoSuchElementException & e )
     {
@@ -850,7 +843,7 @@ static PyObject *importValue( PyObject *, PyObject *args )
     }
     return 0;
 }
-#endif
+
 
 static PyObject *isInterface( PyObject *, PyObject *args )
 {
@@ -1101,11 +1094,9 @@ struct PyMethodDef PyUNOModule_methods [] =
     {const_cast< char * >("invoke"), invoke, METH_VARARGS, NULL},
     {const_cast< char * >("setCurrentContext"), setCurrentContext, METH_VARARGS, NULL},
     {const_cast< char * >("getCurrentContext"), getCurrentContext, METH_NOARGS, NULL},
-#if PY_MAJOR_VERSION >= 3
     {const_cast< char * >("getModuleElementNames"), getModuleElementNames, METH_VARARGS, NULL},
     {const_cast< char * >("hasModule"), hasModule, METH_VARARGS, NULL},
     {const_cast< char * >("importValue"), importValue, METH_VARARGS, NULL}, 
-#endif
     {NULL, NULL, 0, NULL}
 };
 
