@@ -46,7 +46,7 @@ PYTHONHOME=$ext_dir
 export PYTHONHOME
 
 # execute binary
-exec "$ext_dir/bin/python3" "$@"
+exec "$ext_dir/bin/python%%VERSION_SUFFIX%%" "$@"
 """
 
 import xml.dom.minidom
@@ -255,10 +255,11 @@ def _get_dir_path(ctx, title="Choose directory", default_dir=None):
         return
 
 
-def Create_Python_sh(*args):
+def Create_Python_sh(*args, **kwargs):
     """ Creates shell script which execute python3 with environmental variables 
     to connect the office instance from the extension package. """
-    ext_id = "mytools.loader.Python3"
+    version = kwargs.get("version", 3)
+    ext_id = "mytools.loader.Python" + ("" if version < 3 else str(version))
     import sys
     import stat
     import uno
@@ -276,16 +277,22 @@ def Create_Python_sh(*args):
     ext_dir = uno.fileUrlToSystemPath(prov.getPackageLocation(ext_id))
     
     values = (("%%OFFICE_PROGRAM%%", sd_prog), ("%%EXTENSION_DIR%%", ext_dir), 
-              ("%%PYVERSION%%", "{}.{}".format(sys.version_info.major, sys.version_info.minor)))
+              ("%%PYVERSION%%", "{}.{}".format(sys.version_info.major, sys.version_info.minor)), 
+              ("%%VERSION_SUFFIX%%", str(version)))
     s = PYTHON_SH_BASE
     for name, value in values:
         s = s.replace(name, value)
     
-    with open(dest, "w", encoding="utf-8") as f:
+    with open(dest, "w") as f:#, encoding="utf-8") as f:
         f.write(s)
     if os.path.exists(dest):
         st = os.stat(dest)
         os.chmod(dest, st.st_mode | stat.S_IEXEC)
+
+
+def Create_Python2_sh(*args):
+    Create_Python_sh(version=2)
+
 
 from com.sun.star.awt.PosSize import X, Y, WIDTH, HEIGHT, POS, POSSIZE
 from com.sun.star.awt.PushButtonType import OK as PushButtonType_OK, CANCEL as PushButtonType_CANCEL
@@ -699,4 +706,4 @@ def Execute_2to3(*args):
         d.execute()
 
 
-g_exportedScripts = Create_services_rdb, Show_Information, Create_Python_sh, Execute_2to3
+g_exportedScripts = Create_services_rdb, Show_Information, Create_Python_sh, Create_Python2_sh, Execute_2to3
