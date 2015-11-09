@@ -94,7 +94,7 @@ Then restart your office.
 You can check the current state with "Show_Information" function.
 
 
-Switching Version
+Switching between Versions
 --------
 You can install both Python 2.7 and 3.X extension packages but you can not 
 enable both at the same time. You have to use the following procedure to 
@@ -226,6 +226,10 @@ No parameter check is provided in this case.
 It can take any number of parameters the create method if you need some 
 initialization parameters. This method is different from the constructor 
 defined in the their IDL.
+
+Within this way to call constructors, you can not specify the current context. 
+Use com::sun::star::lang::XMultiServiceFactory interface instead if you 
+need specific context.
 
 You can import only registerd services in the office registry. If you want 
 to instantiate your own service installed by your extension, the extension 
