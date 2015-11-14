@@ -19,6 +19,7 @@ Restrictions
 * This extension can not coexist with the default Python.
 * ToDo: Python 3.3 might not work well.
 * For Python 2.7, import hook based on importlib is not supported.
+* No plan to support Python 3.0, 3.1 and 3.2.
 
 
 How to Build
@@ -207,7 +208,7 @@ And its value elements are accessible as module attributes.
 
 These module attributes are not loaded at import time of the module. 
 But once a value is requested, it would be normal attribute of the module. 
-No more \__getattr\__ hook is not called to get the value.
+The \__getattr\__ hook is not called to get the value anymore.
 
 Constructors are defined on the some services which provides the way to 
 instantiate service without using com.sun.star.lang.XMultiComponentFactory. 
