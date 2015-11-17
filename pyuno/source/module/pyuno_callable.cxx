@@ -312,7 +312,7 @@ PyObject* PyUNO_service_constructor_call(PyObject* self, PyObject* args, PyObjec
                 rtl::OStringBuffer buf;
                 buf.append( OUStringToOString( me->members->constructorName, RTL_TEXTENCODING_ASCII_US ) )
                    .append( "() takes exactly " ).append( aParameters.getLength() )
-                   .append( " arguments (" ).append( nPassedLength ).append( " given)" );
+                   .append( " arguments (" ).append( (sal_Int32)nPassedLength ).append( " given)" );
                 PyErr_SetString( PyExc_TypeError, buf.getStr() );
                 return 0;
             }
