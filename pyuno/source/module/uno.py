@@ -31,22 +31,21 @@ _g_ctx = pyuno.getComponentContext()
 
 
 def getComponentContext():
-    """ returns the UNO component context, that was used to initialize the python runtime.
-    """
+    """ Returns the UNO component context, that was used to initialize the PyUNO. """
     return _g_ctx
 
 def getConstantByName(constant):
-    "Looks up the value of a idl constant by giving its explicit name"
+    """ Looks up the value of an IDL constant or an enum by giving its explicit name. """
     return pyuno.getConstantByName(constant)
 
 def getTypeByName(typeName):
-    """ returns a uno.Type instance of the type given by typeName. In case the
+    """ Returns a uno.Type instance of the type given by typeName. In case the
         type does not exist, a com.sun.star.uno.RuntimeException is raised.
     """
     return pyuno.getTypeByName(typeName)
 
 def createUnoStruct(typeName, *args):
-    """creates a uno struct or exception given by typeName. The parameter args may
+    """ Creates an UNO struct or exception given by typeName. The parameter args may
     1) be empty. In this case, you get a default constructed uno structure.
        ( e.g. createUnoStruct( "com.sun.star.uno.Exception" ) )
     2) be a sequence with exactly one element, that contains an instance of typeName.
@@ -61,39 +60,38 @@ def createUnoStruct(typeName, *args):
     return getClass(typeName)(*args)
 
 def getClass(typeName):
-    """returns the class of a concrete uno exception, struct or interface
-    """
+    """ Returns the class of a concrete uno exception, struct or interface """
     return pyuno.getClass(typeName)
 
 def isInterface(obj):
-    """returns true, when obj is a class of a uno interface"""
+    """ Returns true, when obj is a class of an UNO interface"""
     return pyuno.isInterface(obj)
 
 def generateUuid():
-    "returns a 16 byte sequence containing a newly generated uuid or guid, see rtl/uuid.h "
+    """ Returns a 16 byte sequence containing a newly generated UUID or GUID, see rtl/uuid.h """
     return pyuno.generateUuid()
 
 def systemPathToFileUrl(systemPath):
-    "returns a file-url for the given system path"
+    """ Returns a file-url for the given system path """
     return pyuno.systemPathToFileUrl(systemPath)
 
 def fileUrlToSystemPath(url):
-    "returns a system path (determined by the system, the python interpreter is running on)"
+    """ Returns a system path (determined by the system, the python interpreter is running on) """
     return pyuno.fileUrlToSystemPath(url)
 
 def absolutize(path, relativeUrl):
-    "returns an absolute file url from the given urls"
+    """ Returns an absolute file url from the given urls """
     return pyuno.absolutize(path, relativeUrl)
 
 def getCurrentContext():
-    """Returns the currently valid current context.
+    """ Returns the currently valid current context.
        see http://udk.openoffice.org/common/man/concept/uno_contexts.html#current_context
        for an explanation on the current context concept
     """
     return pyuno.getCurrentContext()
 
 def setCurrentContext(newContext):
-    """Sets newContext as new uno current context. The newContext must
+    """ Sets newContext as new uno current context. The newContext must
     implement the XCurrentContext interface. The implemenation should
     handle the desired properties and delegate unknown properties to the
     old context. Ensure to reset the old one when you leave your stack ...
@@ -103,7 +101,7 @@ def setCurrentContext(newContext):
 
 
 class Enum:
-    "Represents a UNO idl enum, use an instance of this class to explicitly pass a boolean to UNO"
+    """ Represents a UNO idl enum, use an instance of this class to explicitly pass a boolean to UNO """
     #typeName the name of the enum as a string
     #value    the actual value of this enum as a string
     def __init__(self, typeName, value):
@@ -126,7 +124,7 @@ class Enum:
         return self.__repr__().__hash__()
 
 class Type:
-    "Represents a UNO type, use an instance of this class to explicitly pass a boolean to UNO"
+    """ Represents a UNO type, use an instance of this class to explicitly pass a boolean to UNO """
 #    typeName                 # Name of the UNO type
 #    typeClass                # python Enum of TypeClass,  see com/sun/star/uno/TypeClass.idl
     def __init__(self, typeName, typeClass):
@@ -149,7 +147,7 @@ class Type:
         return self.typeName.__hash__()
 
 class Bool(object):
-    """Represents a UNO boolean, use an instance of this class to explicitly
+    """ Represents a UNO boolean, use an instance of this class to explicitly
        pass a boolean to UNO.
        Note: This class is deprecated. Use python's True and False directly instead
     """
@@ -163,7 +161,7 @@ class Bool(object):
         return False
 
 class Char:
-    "Represents a UNO char, use an instance of this class to explicitly pass a char to UNO"
+    """ Represents an UNO char, use an instance of this class to explicitly pass a char to UNO """
     # @param value pass a Unicode string with length 1
     def __init__(self, value):
         assert isinstance(value, unicode)
@@ -231,7 +229,7 @@ class ByteSequence:
 
 
 class Any:
-    "use only in connection with uno.invoke() to pass an explicit typed any"
+    """ Use only in connection with uno.invoke() to pass an explicit typed any """
     def __init__(self, type, value):
         if isinstance(type, Type):
             self.type = type
@@ -240,7 +238,7 @@ class Any:
         self.value = value
 
 def invoke(object, methodname, argTuple):
-    "use this function to pass exactly typed anys to the callee (using uno.Any)"
+    """ Use this function to pass exactly typed anys to the callee (using uno.Any) """
     return pyuno.invoke(object, methodname, argTuple)
 
 #---------------------------------------------------------------------------------------
