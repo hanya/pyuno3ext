@@ -121,6 +121,9 @@ class Enum:
     
     def __ne__(self, other):
         return not self.__eq__(other)
+    
+    def __hash__(self):
+        return self.__repr__().__hash__()
 
 class Type:
     "Represents a UNO type, use an instance of this class to explicitly pass a boolean to UNO"
@@ -165,7 +168,7 @@ class Char:
     def __init__(self, value):
         assert isinstance(value, unicode)
         assert len(value) == 1
-        self.value=value
+        self.value = value
 
     def __repr__(self):
         return "<Char instance %s>" % (self.value,)
@@ -181,6 +184,9 @@ class Char:
     
     def __ne__(self, other):
         return not self.__eq__(other)
+    
+    def __hash__(self):
+        return self.__repr__.__hash__()
 
 class ByteSequence:
     def __init__(self, value):
@@ -221,7 +227,7 @@ class ByteSequence:
         raise TypeError("expected byte, bytearray or ByteSequence as operand")
 
     def __hash__(self):
-        return self.value.hash()
+        return self.value.__hash__()
 
 
 class Any:
